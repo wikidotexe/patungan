@@ -29,13 +29,13 @@ export function ItemsSection({ items, persons, onAdd, onRemove, onToggleAssign }
       <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
         🍽️ Item / Menu
       </h2>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <input
           type="text"
           placeholder="Nama item..."
           value={itemName}
           onChange={(e) => setItemName(e.target.value)}
-          className="flex-1 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none ring-ring focus:ring-2"
+          className="min-w-0 flex-1 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none ring-ring focus:ring-2"
         />
         <input
           type="number"
@@ -43,11 +43,11 @@ export function ItemsSection({ items, persons, onAdd, onRemove, onToggleAssign }
           value={itemPrice}
           onChange={(e) => setItemPrice(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-          className="w-32 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none ring-ring focus:ring-2"
+          className="min-w-0 w-32 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none ring-ring focus:ring-2"
         />
         <button
           onClick={handleAdd}
-          className="flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90"
+          className="flex shrink-0 items-center gap-1 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90"
         >
           <Plus className="h-4 w-4" />
         </button>
@@ -82,11 +82,10 @@ export function ItemsSection({ items, persons, onAdd, onRemove, onToggleAssign }
                     <button
                       key={p.id}
                       onClick={() => onToggleAssign(item.id, p.id)}
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition-all ${
-                        isAssigned
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition-all ${isAssigned
                           ? "bg-primary text-primary-foreground shadow-sm"
                           : "bg-muted text-muted-foreground hover:bg-secondary"
-                      }`}
+                        }`}
                     >
                       {p.name}
                     </button>

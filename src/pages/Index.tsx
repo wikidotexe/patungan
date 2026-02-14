@@ -327,17 +327,17 @@ function PersonItemCard({ person, onAddItem, onRemoveItem }: { person: PersonWit
   return (
     <div className="rounded-xl border border-border bg-card p-4 space-y-3">
       <h3 className="font-semibold text-foreground">{person.name}</h3>
-      <div className="flex gap-2">
-        <input type="text" placeholder="Nama item..." value={itemName} onChange={(e) => setItemName(e.target.value)} className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-ring focus:ring-2" />
+      <div className="flex flex-wrap gap-2">
+        <input type="text" placeholder="Nama item..." value={itemName} onChange={(e) => setItemName(e.target.value)} className="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-ring focus:ring-2" />
         <input
           type="number"
           placeholder="Harga (Rp)"
           value={itemPrice}
           onChange={(e) => setItemPrice(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-          className="w-28 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-ring focus:ring-2"
+          className="min-w-0 w-28 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-ring focus:ring-2"
         />
-        <button onClick={handleAdd} className="flex items-center justify-center rounded-lg bg-primary px-3 py-2 text-primary-foreground transition-colors hover:opacity-90">
+        <button onClick={handleAdd} className="flex shrink-0 items-center justify-center rounded-lg bg-primary px-3 py-2 text-primary-foreground transition-colors hover:opacity-90">
           <Plus className="h-4 w-4" />
         </button>
       </div>
