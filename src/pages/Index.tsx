@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Person, formatRupiah, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/bill";
 import { PeopleSection } from "@/components/PeopleSection";
-import { ArrowLeft, CheckCircle2, Share2, Copy, Receipt, Plus, Trash2, FileDown, MessageCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Share2, Copy, Receipt, Plus, Trash2, FileDown, MessageCircle, Pencil, Check, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -135,6 +135,9 @@ const Index = () => {
   const removeItemFromPerson = (personId: string, itemId: string) => {
     setPersons((prev) => prev.map((p) => (p.id === personId ? { ...p, items: p.items.filter((i) => i.id !== itemId) } : p)));
   };
+  const updateItemInPerson = (personId: string, itemId: string, name: string, price: number) => {
+    setPersons((prev) => prev.map((p) => (p.id === personId ? { ...p, items: p.items.map((i) => (i.id === itemId ? { ...i, name, price } : i)) } : p)));
+  };
 
   const summaries = useMemo(() => {
     return persons.map((person) => {
@@ -220,7 +223,7 @@ const Index = () => {
           <div className="space-y-4">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Item per Teman</h2>
             {persons.map((person) => (
-              <PersonItemCard key={person.id} person={person} onAddItem={(name, price) => addItemToPerson(person.id, name, price)} onRemoveItem={(itemId) => removeItemFromPerson(person.id, itemId)} />
+              <PersonItemCard key={person.id} person={person} onAddItem={(name, price) => addItemToPerson(person.id, name, price)} onRemoveItem={(itemId) => removeItemFromPerson(person.id, itemId)} onUpdateItem={(itemId, name, price) => updateItemInPerson(person.id, itemId, name, price)} />
             ))}
           </div>
         )}
@@ -376,9 +379,12 @@ const Index = () => {
 };
 
 // Sub-component for per-person item input
-function PersonItemCard({ person, onAddItem, onRemoveItem }: { person: PersonWithItems; onAddItem: (name: string, price: number) => void; onRemoveItem: (itemId: string) => void }) {
+function PersonItemCard({ person, onAddItem, onRemoveItem, onUpdateItem }: { person: PersonWithItems; onAddItem: (name: string, price: number) => void; onRemoveItem: (itemId: string) => void; onUpdateItem: (itemId: string, name: string, price: number) => void }) {
   const [itemName, setItemName] = useState("");
   const [itemPrice, setItemPrice] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPrice, setEditPrice] = useState("");
 
   const handleAdd = () => {
     const price = parseFloat(itemPrice);
@@ -386,6 +392,20 @@ function PersonItemCard({ person, onAddItem, onRemoveItem }: { person: PersonWit
       onAddItem(itemName.trim(), price);
       setItemName("");
       setItemPrice("");
+    }
+  };
+
+  const startEditing = (item: PersonItem) => {
+    setEditingId(item.id);
+    setEditName(item.name);
+    setEditPrice(String(item.price));
+  };
+
+  const handleUpdate = () => {
+    const price = parseFloat(editPrice);
+    if (editingId && editName.trim() && !isNaN(price) && price > 0) {
+      onUpdateItem(editingId, editName.trim(), price);
+      setEditingId(null);
     }
   };
 
@@ -409,13 +429,33 @@ function PersonItemCard({ person, onAddItem, onRemoveItem }: { person: PersonWit
       <AnimatePresence>
         {person.items.map((item) => (
           <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
-            <div className="text-sm">
-              <span className="font-medium text-foreground">{item.name}</span>
-              <span className="ml-2 text-primary font-medium">{formatRupiah(item.price)}</span>
-            </div>
-            <button onClick={() => onRemoveItem(item.id)} className="rounded-lg p-1 text-muted-foreground hover:text-destructive transition-colors">
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            {editingId === item.id ? (
+              <div className="flex flex-1 items-center gap-2">
+                <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary" autoFocus />
+                <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleUpdate()} className="min-w-0 w-20 rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary" />
+                <button onClick={handleUpdate} className="text-primary hover:text-primary/80 transition-colors">
+                  <Check className="h-4 w-4" />
+                </button>
+                <button onClick={() => setEditingId(null)} className="text-muted-foreground hover:text-foreground transition-colors">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="text-sm">
+                  <span className="font-medium text-foreground">{item.name}</span>
+                  <span className="ml-2 text-primary font-medium">{formatRupiah(item.price)}</span>
+                </div>
+                <div className="flex gap-1">
+                  <button onClick={() => startEditing(item)} className="rounded-lg p-1 text-muted-foreground hover:text-primary transition-colors">
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button onClick={() => onRemoveItem(item.id)} className="rounded-lg p-1 text-muted-foreground hover:text-destructive transition-colors">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </>
+            )}
           </motion.div>
         ))}
       </AnimatePresence>
