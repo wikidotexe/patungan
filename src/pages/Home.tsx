@@ -16,13 +16,13 @@ const Home = () => {
 
         <div className="grid gap-4 w-full">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <Link to="/split-bill" className="flex items-center gap-4 rounded-2xl border border-border bg-card p-5 text-left transition-all hover:shadow-md hover:border-primary/30">
+            <Link to="/split-bill-title" className="flex items-center gap-4 rounded-2xl border border-border bg-card p-5 text-left transition-all hover:shadow-md hover:border-primary/30">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <Receipt className="h-6 w-6" />
               </div>
               <div>
                 <h2 className="font-bold text-card-foreground">Split Bill</h2>
-                <p className="text-sm text-muted-foreground">Bagi rata total tagihan ke semua orang</p>
+                <p className="text-sm text-muted-foreground">Bagi rata total tagihan ke semua teman</p>
               </div>
             </Link>
           </motion.div>
@@ -53,7 +53,11 @@ const Home = () => {
         </div>
       </div>
       <footer className="w-full text-center py-6 text-xs text-muted-foreground">
-        © 2026 Patungan by <a href="https://www.nofileexistshere.my.id/" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">Nexteam</a>. All rights reserved.
+        © 2026 Patungan by{" "}
+        <a href="https://www.nofileexistshere.my.id/" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
+          Nexteam
+        </a>
+        . All rights reserved.
       </footer>
     </div>
   );

@@ -5,9 +5,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import SplitBill from "./pages/SplitBill";
+import SplitBillTitle from "./pages/SplitBillTitle";
 import CustomSplit from "./pages/Index";
 import CustomSplitTitle from "./pages/CustomSplitTitle";
 import NotFound from "./pages/NotFound";
+import CoffeeBubble from "./components/CoffeeBubble";
 
 const queryClient = new QueryClient();
 
@@ -19,13 +21,15 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/split-bill-title" element={<SplitBillTitle />} />
           <Route path="/split-bill" element={<SplitBill />} />
-          <Route path="/custom-split" element={<CustomSplit />} />
           <Route path="/custom-split-title" element={<CustomSplitTitle />} />
+          <Route path="/custom-split" element={<CustomSplit />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+      <CoffeeBubble />
     </TooltipProvider>
   </QueryClientProvider>
 );

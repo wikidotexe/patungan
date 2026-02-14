@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Person, formatRupiah, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/bill";
 import { PeopleSection } from "@/components/PeopleSection";
 import { ArrowLeft, CheckCircle2, Share2, Copy, Receipt, Plus, Trash2, FileDown, MessageCircle } from "lucide-react";
@@ -47,19 +47,79 @@ const Index = () => {
       window.open(url, "_blank");
     }
   };
-  const [persons, setPersons] = useState<PersonWithItems[]>([]);
-  const [splitTitle, setSplitTitle] = useState("");
-  // Get title from query param
-  React.useEffect(() => {
+  // Helper to get title from URL immediately
+  const getTitleFromUrl = () => {
     const params = new URLSearchParams(window.location.search);
-    const title = params.get("title");
-    if (title) setSplitTitle(title);
-  }, []);
-  const [enableService, setEnableService] = useState(true);
-  const [enableTax, setEnableTax] = useState(true);
-  const [customService, setCustomService] = useState<string>("");
-  const [customTax, setCustomTax] = useState<string>("");
+    return params.get("title") || "";
+  };
+
+  const initialTitle = getTitleFromUrl();
+  const [persons, setPersons] = useState<PersonWithItems[]>(() => {
+    if (!initialTitle) return [];
+    const saved = localStorage.getItem(`custom_patungan_${initialTitle}_persons`);
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [splitTitle, setSplitTitle] = useState(initialTitle);
+
+  const [enableService, setEnableService] = useState(() => {
+    if (!initialTitle) return true;
+    const saved = localStorage.getItem(`custom_patungan_${initialTitle}_enableService`);
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [enableTax, setEnableTax] = useState(() => {
+    if (!initialTitle) return true;
+    const saved = localStorage.getItem(`custom_patungan_${initialTitle}_enableTax`);
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [customService, setCustomService] = useState(() => {
+    if (!initialTitle) return "";
+    return localStorage.getItem(`custom_patungan_${initialTitle}_customService`) || "";
+  });
+  const [customTax, setCustomTax] = useState(() => {
+    if (!initialTitle) return "";
+    return localStorage.getItem(`custom_patungan_${initialTitle}_customTax`) || "";
+  });
   const pdfRef = useRef<HTMLDivElement>(null);
+
+  // Persistence
+  useEffect(() => {
+    if (!splitTitle) return;
+    localStorage.setItem(`custom_patungan_${splitTitle}_persons`, JSON.stringify(persons));
+    localStorage.setItem(`custom_patungan_${splitTitle}_enableService`, JSON.stringify(enableService));
+    localStorage.setItem(`custom_patungan_${splitTitle}_enableTax`, JSON.stringify(enableTax));
+    localStorage.setItem(`custom_patungan_${splitTitle}_customService`, customService);
+    localStorage.setItem(`custom_patungan_${splitTitle}_customTax`, customTax);
+
+    // Update global bill list with timestamp
+    const savedList = localStorage.getItem("custom_patungan_bill_list");
+    let list: any[] = savedList ? JSON.parse(savedList) : [];
+
+    // Migration: convert string[] to object[] if needed
+    if (list.length > 0 && typeof list[0] === "string") {
+      list = list.map((title) => ({ title, createdAt: Date.now() }));
+    }
+
+    const billIndex = list.findIndex((b) => b.title === splitTitle);
+    if (billIndex === -1) {
+      localStorage.setItem("custom_patungan_bill_list", JSON.stringify([...list, { title: splitTitle, createdAt: Date.now() }]));
+    }
+  }, [persons, splitTitle, enableService, enableTax, customService, customTax]);
+
+  const resetData = () => {
+    if (confirm("Hapus semua data input untuk bill ini?")) {
+      setPersons([]);
+      setEnableService(true);
+      setEnableTax(true);
+      setCustomService("");
+      setCustomTax("");
+      localStorage.removeItem(`custom_patungan_${splitTitle}_persons`);
+      localStorage.removeItem(`custom_patungan_${splitTitle}_enableService`);
+      localStorage.removeItem(`custom_patungan_${splitTitle}_enableTax`);
+      localStorage.removeItem(`custom_patungan_${splitTitle}_customService`);
+      localStorage.removeItem(`custom_patungan_${splitTitle}_customTax`);
+      toast.info("Data dibersihkan");
+    }
+  };
 
   const addPerson = (name: string) => {
     setPersons((prev) => [...prev, { id: genId(), name, items: [] }]);
@@ -138,11 +198,16 @@ const Index = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <div className="w-full max-w-xl mx-auto px-2 md:px-4 py-8 space-y-6 flex-1">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <Link to="/" className="flex h-9 w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <h1 className="text-xl font-bold text-foreground">{splitTitle || "Custom Split Bill"}</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link to="/" className="flex h-9 w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+            <h1 className="text-xl font-bold text-foreground">{splitTitle || "Custom Split Bill"}</h1>
+          </div>
+          <button onClick={resetData} className="flex h-9 w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-destructive transition-colors" title="Hapus Data">
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
 
         {/* People */}

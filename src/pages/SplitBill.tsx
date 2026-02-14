@@ -10,33 +10,70 @@ let nextId = 1;
 const genId = () => String(nextId++);
 
 const SplitBill = () => {
-  const [billName, setBillName] = useState(() => localStorage.getItem("patungan_billName") || "");
-  const [totalBill, setTotalBill] = useState(() => localStorage.getItem("patungan_totalBill") || "");
+  // Helper to get title from URL immediately
+  const getTitleFromUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("title") || "";
+  };
+
+  const initialTitle = getTitleFromUrl();
+  const [billName, setBillName] = useState(() => {
+    if (!initialTitle) return "";
+    return localStorage.getItem(`patungan_${initialTitle}_billName`) || initialTitle;
+  });
+  const [totalBill, setTotalBill] = useState(() => {
+    if (!initialTitle) return "";
+    return localStorage.getItem(`patungan_${initialTitle}_totalBill`) || "";
+  });
   const [persons, setPersons] = useState<Person[]>(() => {
-    const saved = localStorage.getItem("patungan_persons");
+    if (!initialTitle) return [];
+    const saved = localStorage.getItem(`patungan_${initialTitle}_persons`);
     return saved ? JSON.parse(saved) : [];
   });
   const [enableService, setEnableService] = useState(() => {
-    const saved = localStorage.getItem("patungan_enableService");
+    if (!initialTitle) return true;
+    const saved = localStorage.getItem(`patungan_${initialTitle}_enableService`);
     return saved !== null ? JSON.parse(saved) : true;
   });
   const [enableTax, setEnableTax] = useState(() => {
-    const saved = localStorage.getItem("patungan_enableTax");
+    if (!initialTitle) return true;
+    const saved = localStorage.getItem(`patungan_${initialTitle}_enableTax`);
     return saved !== null ? JSON.parse(saved) : true;
   });
-  const [customService, setCustomService] = useState(() => localStorage.getItem("patungan_customService") || "");
-  const [customTax, setCustomTax] = useState(() => localStorage.getItem("patungan_customTax") || "");
+  const [customService, setCustomService] = useState(() => {
+    if (!initialTitle) return "";
+    return localStorage.getItem(`patungan_${initialTitle}_customService`) || "";
+  });
+  const [customTax, setCustomTax] = useState(() => {
+    if (!initialTitle) return "";
+    return localStorage.getItem(`patungan_${initialTitle}_customTax`) || "";
+  });
 
   // Persistence
   useEffect(() => {
-    localStorage.setItem("patungan_billName", billName);
-    localStorage.setItem("patungan_totalBill", totalBill);
-    localStorage.setItem("patungan_persons", JSON.stringify(persons));
-    localStorage.setItem("patungan_enableService", JSON.stringify(enableService));
-    localStorage.setItem("patungan_enableTax", JSON.stringify(enableTax));
-    localStorage.setItem("patungan_customService", customService);
-    localStorage.setItem("patungan_customTax", customTax);
-  }, [billName, totalBill, persons, enableService, enableTax, customService, customTax]);
+    if (!initialTitle) return;
+    localStorage.setItem(`patungan_${initialTitle}_billName`, billName);
+    localStorage.setItem(`patungan_${initialTitle}_totalBill`, totalBill);
+    localStorage.setItem(`patungan_${initialTitle}_persons`, JSON.stringify(persons));
+    localStorage.setItem(`patungan_${initialTitle}_enableService`, JSON.stringify(enableService));
+    localStorage.setItem(`patungan_${initialTitle}_enableTax`, JSON.stringify(enableTax));
+    localStorage.setItem(`patungan_${initialTitle}_customService`, customService);
+    localStorage.setItem(`patungan_${initialTitle}_customTax`, customTax);
+
+    // Update global bill list with timestamp
+    const savedList = localStorage.getItem("patungan_bill_list");
+    let list: any[] = savedList ? JSON.parse(savedList) : [];
+
+    // Migration: convert string[] to object[] if needed
+    if (list.length > 0 && typeof list[0] === "string") {
+      list = list.map((title) => ({ title, createdAt: Date.now() }));
+    }
+
+    const billIndex = list.findIndex((b) => b.title === initialTitle);
+    if (billIndex === -1) {
+      localStorage.setItem("patungan_bill_list", JSON.stringify([...list, { title: initialTitle, createdAt: Date.now() }]));
+    }
+  }, [billName, totalBill, persons, enableService, enableTax, customService, customTax, initialTitle]);
 
   const addPerson = (name: string) => {
     setPersons((prev) => [...prev, { id: genId(), name }]);
@@ -47,23 +84,21 @@ const SplitBill = () => {
   };
 
   const resetData = () => {
-    if (confirm("Hapus semua data input?")) {
-      setBillName("");
+    if (confirm("Hapus semua data input untuk bill ini?")) {
+      setBillName(initialTitle);
       setTotalBill("");
       setPersons([]);
       setEnableService(true);
       setEnableTax(true);
       setCustomService("");
       setCustomTax("");
-      localStorage.clear(); // Simple clear for this app's namespace would be better, but localStorage.clear() is fine if no other keys.
-      // Better to clear specific keys to be safe
-      localStorage.removeItem("patungan_billName");
-      localStorage.removeItem("patungan_totalBill");
-      localStorage.removeItem("patungan_persons");
-      localStorage.removeItem("patungan_enableService");
-      localStorage.removeItem("patungan_enableTax");
-      localStorage.removeItem("patungan_customService");
-      localStorage.removeItem("patungan_customTax");
+      localStorage.removeItem(`patungan_${initialTitle}_billName`);
+      localStorage.removeItem(`patungan_${initialTitle}_totalBill`);
+      localStorage.removeItem(`patungan_${initialTitle}_persons`);
+      localStorage.removeItem(`patungan_${initialTitle}_enableService`);
+      localStorage.removeItem(`patungan_${initialTitle}_enableTax`);
+      localStorage.removeItem(`patungan_${initialTitle}_customService`);
+      localStorage.removeItem(`patungan_${initialTitle}_customTax`);
       toast.info("Data dibersihkan");
     }
   };
