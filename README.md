@@ -1,4 +1,7 @@
-# Welcome to your Lovable project
+# Patungan
+
+Bagi tagihan dengan mudah • Pajak & Service otomatis
+
 
 ## Project info
 
