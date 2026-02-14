@@ -22,16 +22,16 @@ export function PeopleSection({ persons, onAdd, onRemove }: PeopleSectionProps) 
   return (
     <div className="space-y-3">
       <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Nama Teman Kalian</h2>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <input
           type="text"
           placeholder="Tulis nama teman kalian..."
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-          className="flex-1 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none ring-ring focus:ring-2"
+          className="min-w-0 flex-1 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none ring-ring focus:ring-2"
         />
-        <button onClick={handleAdd} className="flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90">
+        <button onClick={handleAdd} className="flex shrink-0 items-center gap-1 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90">
           <Plus className="h-4 w-4" />
           Tambah
         </button>

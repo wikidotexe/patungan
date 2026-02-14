@@ -1,7 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Person, formatRupiah, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/bill";
 import { PeopleSection } from "@/components/PeopleSection";
-import { ArrowLeft, CheckCircle2, Share2, Copy } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Share2, Copy, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -10,19 +10,62 @@ let nextId = 1;
 const genId = () => String(nextId++);
 
 const SplitBill = () => {
-  const [billName, setBillName] = useState("");
-  const [totalBill, setTotalBill] = useState("");
-  const [persons, setPersons] = useState<Person[]>([]);
-  const [enableService, setEnableService] = useState(true);
-  const [enableTax, setEnableTax] = useState(true);
-  const [customService, setCustomService] = useState<string>("");
-  const [customTax, setCustomTax] = useState<string>("");
+  const [billName, setBillName] = useState(() => localStorage.getItem("patungan_billName") || "");
+  const [totalBill, setTotalBill] = useState(() => localStorage.getItem("patungan_totalBill") || "");
+  const [persons, setPersons] = useState<Person[]>(() => {
+    const saved = localStorage.getItem("patungan_persons");
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [enableService, setEnableService] = useState(() => {
+    const saved = localStorage.getItem("patungan_enableService");
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [enableTax, setEnableTax] = useState(() => {
+    const saved = localStorage.getItem("patungan_enableTax");
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [customService, setCustomService] = useState(() => localStorage.getItem("patungan_customService") || "");
+  const [customTax, setCustomTax] = useState(() => localStorage.getItem("patungan_customTax") || "");
+
+  // Persistence
+  useEffect(() => {
+    localStorage.setItem("patungan_billName", billName);
+    localStorage.setItem("patungan_totalBill", totalBill);
+    localStorage.setItem("patungan_persons", JSON.stringify(persons));
+    localStorage.setItem("patungan_enableService", JSON.stringify(enableService));
+    localStorage.setItem("patungan_enableTax", JSON.stringify(enableTax));
+    localStorage.setItem("patungan_customService", customService);
+    localStorage.setItem("patungan_customTax", customTax);
+  }, [billName, totalBill, persons, enableService, enableTax, customService, customTax]);
 
   const addPerson = (name: string) => {
     setPersons((prev) => [...prev, { id: genId(), name }]);
   };
+
   const removePerson = (id: string) => {
     setPersons((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  const resetData = () => {
+    if (confirm("Hapus semua data input?")) {
+      setBillName("");
+      setTotalBill("");
+      setPersons([]);
+      setEnableService(true);
+      setEnableTax(true);
+      setCustomService("");
+      setCustomTax("");
+      localStorage.clear(); // Simple clear for this app's namespace would be better, but localStorage.clear() is fine if no other keys.
+      // Better to clear specific keys to be safe
+      localStorage.removeItem("patungan_billName");
+      localStorage.removeItem("patungan_totalBill");
+      localStorage.removeItem("patungan_persons");
+      localStorage.removeItem("patungan_enableService");
+      localStorage.removeItem("patungan_enableTax");
+      localStorage.removeItem("patungan_customService");
+      localStorage.removeItem("patungan_customTax");
+      toast.info("Data dibersihkan");
+    }
   };
 
   const calculation = useMemo(() => {
@@ -70,11 +113,16 @@ const SplitBill = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-xl px-4 py-8 space-y-6">
-        <div className="flex items-center gap-3">
-          <Link to="/" className="flex h-9 w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <h1 className="text-xl font-bold text-foreground">Split Bill</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link to="/" className="flex h-9 w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+            <h1 className="text-xl font-bold text-foreground">Split Bill</h1>
+          </div>
+          <button onClick={resetData} className="flex h-9 w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-destructive transition-colors" title="Hapus Data">
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
 
         {/* Bill Info */}
