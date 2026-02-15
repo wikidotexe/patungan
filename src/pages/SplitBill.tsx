@@ -235,7 +235,9 @@ const SplitBill = () => {
               </button>
             </div>
           </div>
-
+          <p className="text-[10px] text-muted-foreground italic mt-1 font-medium">
+            * Pajak dan service, di bagi rata ke semua teman
+          </p>
           <div className="border-t border-border pt-3 flex justify-between items-center">
             <span className="font-semibold text-foreground">Total</span>
             <span className="text-lg font-bold text-primary">{formatRupiah(calculation.total)}</span>

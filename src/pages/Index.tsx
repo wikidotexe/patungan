@@ -141,25 +141,33 @@ const Index = () => {
   };
 
   const summaries = useMemo(() => {
+    const totalSubtotal = persons.reduce((sum, p) => sum + p.items.reduce((isum, i) => isum + i.price, 0), 0);
+
+    let totalServiceTotal = 0;
+    if (enableService) {
+      if (customService && !isNaN(Number(customService))) {
+        totalServiceTotal = Number(customService);
+      } else {
+        totalServiceTotal = totalSubtotal * SERVICE_CHARGE_RATE;
+      }
+    }
+
+    let totalTaxTotal = 0;
+    if (enableTax) {
+      if (customTax && !isNaN(Number(customTax))) {
+        totalTaxTotal = Number(customTax);
+      } else {
+        totalTaxTotal = (totalSubtotal + totalServiceTotal) * TAX_RATE;
+      }
+    }
+
+    const avgService = persons.length > 0 ? totalServiceTotal / persons.length : 0;
+    const avgTax = persons.length > 0 ? totalTaxTotal / persons.length : 0;
+
     return persons.map((person) => {
       const subtotal = person.items.reduce((sum, i) => sum + i.price, 0);
-      // Custom service and tax (if filled, use as absolute value, else fallback to percent)
-      let serviceCharge = 0;
-      let tax = 0;
-      if (enableService) {
-        if (customService && !isNaN(Number(customService))) {
-          serviceCharge = Number(customService);
-        } else {
-          serviceCharge = subtotal * SERVICE_CHARGE_RATE;
-        }
-      }
-      if (enableTax) {
-        if (customTax && !isNaN(Number(customTax))) {
-          tax = Number(customTax);
-        } else {
-          tax = (subtotal + serviceCharge) * TAX_RATE;
-        }
-      }
+      const serviceCharge = avgService;
+      const tax = avgTax;
       const total = subtotal + serviceCharge + tax;
       return { ...person, subtotal, serviceCharge, tax, total };
     });
@@ -274,6 +282,9 @@ const Index = () => {
               </button>
             </div>
           </div>
+          <p className="text-[10px] text-muted-foreground italic mt-1 font-medium">
+            * Pajak dan service, di bagi rata ke semua teman
+          </p>
           <div className="border-t border-border pt-3 flex justify-between items-center">
             <span className="font-semibold text-foreground">Total</span>
             <span className="text-lg font-bold text-primary">{formatRupiah(totalBill)}</span>
