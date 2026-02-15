@@ -14,7 +14,7 @@ const CoffeeBubble = () => {
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <motion.a
-                            href="https://lynk.id/nexteam"
+                            href="https://lynk.id/nexteam/s/v1xwgxzxod9l"
                             target="_blank"
                             rel="noopener noreferrer"
                             initial={{ scale: 0, opacity: 0 }}
