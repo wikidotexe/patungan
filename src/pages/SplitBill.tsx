@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle2, Share2, Copy, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import Footer from "@/components/Footer";
 
 let nextId = 1;
 const genId = () => String(nextId++);
@@ -279,6 +280,7 @@ const SplitBill = () => {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 };

@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { exportElementToPDF } from "@/lib/pdf";
+import Footer from "@/components/Footer";
 
 let nextId = 1;
 const genId = () => String(nextId++);
@@ -367,13 +368,7 @@ const Index = () => {
           </>
         )}
       </div>
-      <footer className="w-full text-center py-6 text-xs text-muted-foreground">
-        © 2026 Patungan by{" "}
-        <a href="https://www.nofileexistshere.my.id/" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
-          Nexteam
-        </a>
-        . All rights reserved.
-      </footer>
+      <Footer />
     </div>
   );
 };

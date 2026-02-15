@@ -1,10 +1,13 @@
 import { Link } from "react-router-dom";
 import { SplitSquareVertical, Receipt, Utensils, Wallet } from "lucide-react";
 import { motion } from "framer-motion";
+import Footer from "@/components/Footer";
+import CoffeeBubble from "@/components/CoffeeBubble";
 
 const Home = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <CoffeeBubble />
       <div className="w-full max-w-md space-y-8 text-center flex-1 mx-auto flex flex-col items-center justify-center px-4 md:px-0">
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
@@ -52,13 +55,7 @@ const Home = () => {
           </motion.div>
         </div>
       </div>
-      <footer className="w-full text-center py-6 text-xs text-muted-foreground">
-        © 2026 Patungan by{" "}
-        <a href="https://www.nofileexistshere.my.id/" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
-          Nexteam
-        </a>
-        . All rights reserved.
-      </footer>
+      <Footer />
     </div>
   );
 };

@@ -9,7 +9,6 @@ import SplitBillTitle from "./pages/SplitBillTitle";
 import CustomSplit from "./pages/Index";
 import CustomSplitTitle from "./pages/CustomSplitTitle";
 import NotFound from "./pages/NotFound";
-import CoffeeBubble from "./components/CoffeeBubble";
 
 const queryClient = new QueryClient();
 
@@ -29,7 +28,6 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-      <CoffeeBubble />
     </TooltipProvider>
   </QueryClientProvider>
 );
