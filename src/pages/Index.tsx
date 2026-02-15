@@ -27,20 +27,22 @@ const Index = () => {
 
   // WhatsApp share handler
   const shareToWhatsApp = () => {
-    if (persons.length === 0 || summaries.every((s) => s.items.length === 0)) {
-      toast.error("Data kosong! Tambahkan teman dan item terlebih dahulu.");
+    if (persons.length === 0) {
+      toast.error("Data kosong! Tambahkan teman terlebih dahulu.");
       return;
     }
     const lines = [
       `🧾 Custom Split Bill`,
-      splitTitle ? `Judul: ${splitTitle}` : "",
+      splitTitle ? `Judul: ${splitTitle}` : undefined,
       `Total: ${formatRupiah(totalBill)}`,
+      "----------------------------------",
       "",
-      ...summaries.map((s) => [`• ${s.name}: ${formatRupiah(s.total)}`, ...s.items.map((i) => `  - ${i.name}: ${formatRupiah(i.price)}`)].join("\n")),
+      ...summaries.map((s) => `• ${s.name}: ${formatRupiah(s.total)}`),
       "",
+      "----------------------------------",
       "Patungan by Nexteam",
     ];
-    const text = lines.filter(Boolean).join("\n");
+    const text = lines.filter((l) => l !== undefined).join("\n");
     if (navigator.share) {
       navigator.share({ text });
     } else {
@@ -189,20 +191,22 @@ const Index = () => {
   };
 
   const copyAll = () => {
-    if (persons.length === 0 || summaries.every((s) => s.items.length === 0)) {
-      toast.error("Data kosong! Tambahkan teman dan item terlebih dahulu.");
+    if (persons.length === 0) {
+      toast.error("Data kosong! Tambahkan teman terlebih dahulu.");
       return;
     }
     const lines = [
       `🧾 Custom Split Bill`,
-      splitTitle ? `Judul: ${splitTitle}` : "",
+      splitTitle ? `Judul: ${splitTitle}` : undefined,
       `Total: ${formatRupiah(totalBill)}`,
+      "----------------------------------",
       "",
-      ...summaries.map((s) => [`• ${s.name}: ${formatRupiah(s.total)}`, ...s.items.map((i) => `  - ${i.name}: ${formatRupiah(i.price)}`)].join("\n")),
+      ...summaries.map((s) => `• ${s.name}: ${formatRupiah(s.total)}`),
       "",
+      "----------------------------------",
       "Patungan by Nexteam",
     ];
-    navigator.clipboard.writeText(lines.filter(Boolean).join("\n"));
+    navigator.clipboard.writeText(lines.filter((l) => l !== undefined).join("\n"));
     toast.success("Ringkasan disalin!");
   };
 

@@ -134,15 +134,17 @@ const SplitBill = () => {
 
   const copyAll = () => {
     const lines = [
-      `🧾 ${billName || "Split Bill"}`,
+      `🧾 Split Bill`,
+      billName ? `Judul: ${billName}` : undefined,
       `Total: ${formatRupiah(calculation.total)}`,
-      `Per orang (${persons.length}): ${formatRupiah(calculation.perPerson)}`,
+      "----------------------------------",
       "",
       ...persons.map((p) => `• ${p.name}: ${formatRupiah(calculation.perPerson)}`),
       "",
+      "----------------------------------",
       "Patungan by Nexteam",
     ];
-    navigator.clipboard.writeText(lines.join("\n"));
+    navigator.clipboard.writeText(lines.filter((l) => l !== undefined).join("\n"));
     toast.success("Ringkasan disalin!");
   };
 
