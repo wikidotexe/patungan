@@ -94,7 +94,7 @@ const ChatAI = () => {
         } catch (error) {
             console.error("Gemini Error:", error);
             toast.error("Gagal menghubungi AI. Cek konfigurasi API Key.");
-            setMessages((prev) => [...prev, { role: "model", content: "Maaf, terjadi kesalahan saat menghubungi AI. Pastikan API Key benar dan internet lancar." }]);
+            setMessages((prev) => [...prev, { role: "model", content: "Maaf, terjadi kesalahan saat menghubungi AI. Sesi chat ini sudah habis." }]);
         } finally {
             setIsLoading(false);
         }
