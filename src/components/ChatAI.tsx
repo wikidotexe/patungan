@@ -241,7 +241,7 @@ const ChatAI = () => {
                                 <button
                                     onClick={handleSend}
                                     disabled={!input.trim() || isLoading}
-                                    className="absolute right-2 bottom-5 md:bottom-3 h-9 w-9 flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
+                                    className="absolute right-2 bottom-5 md:bottom-5 h-9 w-9 flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
                                 >
                                     <Send className="h-4 w-4" />
                                 </button>
