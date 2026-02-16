@@ -1,10 +1,20 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Person, formatRupiah, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/bill";
 import { PeopleSection } from "@/components/PeopleSection";
-import { ArrowLeft, CheckCircle2, Share2, Copy, Receipt, Plus, Trash2, FileDown, MessageCircle, Pencil, Check, X } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Share2, Copy, Receipt, Plus, Trash2, FileDown, MessageCircle, Pencil, Check, X, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { exportElementToPDF } from "@/lib/pdf";
 import Footer from "@/components/Footer";
 
@@ -83,6 +93,7 @@ const Index = () => {
     return localStorage.getItem(`custom_patungan_${initialTitle}_customTax`) || "";
   });
   const pdfRef = useRef<HTMLDivElement>(null);
+  const [collapsedResults, setCollapsedResults] = useState<string[]>([]);
 
   // Persistence
   useEffect(() => {
@@ -108,20 +119,21 @@ const Index = () => {
     }
   }, [persons, splitTitle, enableService, enableTax, customService, customTax]);
 
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+
   const resetData = () => {
-    if (confirm("Hapus semua data input untuk bill ini?")) {
-      setPersons([]);
-      setEnableService(true);
-      setEnableTax(true);
-      setCustomService("");
-      setCustomTax("");
-      localStorage.removeItem(`custom_patungan_${splitTitle}_persons`);
-      localStorage.removeItem(`custom_patungan_${splitTitle}_enableService`);
-      localStorage.removeItem(`custom_patungan_${splitTitle}_enableTax`);
-      localStorage.removeItem(`custom_patungan_${splitTitle}_customService`);
-      localStorage.removeItem(`custom_patungan_${splitTitle}_customTax`);
-      toast.info("Data dibersihkan");
-    }
+    setPersons([]);
+    setEnableService(true);
+    setEnableTax(true);
+    setCustomService("");
+    setCustomTax("");
+    localStorage.removeItem(`custom_patungan_${splitTitle}_persons`);
+    localStorage.removeItem(`custom_patungan_${splitTitle}_enableService`);
+    localStorage.removeItem(`custom_patungan_${splitTitle}_enableTax`);
+    localStorage.removeItem(`custom_patungan_${splitTitle}_customService`);
+    localStorage.removeItem(`custom_patungan_${splitTitle}_customTax`);
+    toast.info("Data dibersihkan");
+    setResetConfirmOpen(false);
   };
 
   const addPerson = (name: string) => {
@@ -221,7 +233,7 @@ const Index = () => {
             </Link>
             <h1 className="text-xl font-bold text-foreground">{splitTitle || "Custom Split Bill"}</h1>
           </div>
-          <button onClick={resetData} className="flex h-9 w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-destructive transition-colors" title="Hapus Data">
+          <button onClick={() => setResetConfirmOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-destructive transition-colors" title="Hapus Data">
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
@@ -254,7 +266,7 @@ const Index = () => {
                 <input
                   type="number"
                   min="0"
-                  placeholder="Custom"
+                  placeholder="Rp Custom"
                   value={customService}
                   onChange={(e) => setCustomService(e.target.value)}
                   className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none ring-ring focus:ring-2"
@@ -275,7 +287,7 @@ const Index = () => {
                 <input
                   type="number"
                   min="0"
-                  placeholder="Custom"
+                  placeholder="Rp Custom"
                   value={customTax}
                   onChange={(e) => setCustomTax(e.target.value)}
                   className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none ring-ring focus:ring-2"
@@ -329,53 +341,79 @@ const Index = () => {
               <div ref={pdfRef} className="grid gap-3 sm:grid-cols-2">
                 {summaries.map((s, i) => (
                   <motion.div key={s.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="rounded-xl border border-border bg-background p-4 space-y-2">
-                    <div className="flex items-center justify-between">
+                    <button
+                      onClick={() => setCollapsedResults(prev => prev.includes(s.id) ? prev.filter(id => id !== s.id) : [...prev, s.id])}
+                      className="flex w-full items-center justify-between text-left"
+                    >
                       <div className="flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                           <Receipt className="h-4 w-4" />
                         </div>
-                        <span className="font-bold text-foreground">{s.name}</span>
+                        <div>
+                          <span className="font-bold text-foreground">{s.name}</span>
+                          {collapsedResults.includes(s.id) && (
+                            <p className="text-xs text-primary font-semibold">{formatRupiah(s.total)}</p>
+                          )}
+                        </div>
                       </div>
-                      <button onClick={() => copyPerson(s)} className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground transition-colors">
-                        <Copy className="h-4 w-4" />
-                      </button>
-                    </div>
-                    {s.items.length > 0 ? (
-                      <>
-                        <div className="space-y-1">
-                          {s.items.map((item) => (
-                            <div key={item.id} className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">{item.name}</span>
-                              <span className="text-foreground">{formatRupiah(item.price)}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="border-t border-border pt-2 space-y-1 text-xs text-muted-foreground">
-                          <div className="flex justify-between">
-                            <span>Subtotal</span>
-                            <span>{formatRupiah(s.subtotal)}</span>
-                          </div>
-                          {enableService && (
-                            <div className="flex justify-between">
-                              <span>Service ({SERVICE_CHARGE_RATE * 100}%)</span>
-                              <span>{formatRupiah(s.serviceCharge)}</span>
-                            </div>
+                      <div className="flex items-center gap-1">
+                        <span
+                          onClick={(e) => { e.stopPropagation(); copyPerson(s); }}
+                          className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </span>
+                        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsedResults.includes(s.id) ? "" : "rotate-180"}`} />
+                      </div>
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {!collapsedResults.includes(s.id) && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: "easeInOut" }}
+                          className="overflow-hidden"
+                        >
+                          {s.items.length > 0 ? (
+                            <>
+                              <div className="space-y-1">
+                                {s.items.map((item) => (
+                                  <div key={item.id} className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">{item.name}</span>
+                                    <span className="text-foreground">{formatRupiah(item.price)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="border-t border-border pt-2 space-y-1 text-xs text-muted-foreground">
+                                <div className="flex justify-between">
+                                  <span>Subtotal</span>
+                                  <span>{formatRupiah(s.subtotal)}</span>
+                                </div>
+                                {enableService && (
+                                  <div className="flex justify-between">
+                                    <span>Service ({SERVICE_CHARGE_RATE * 100}%)</span>
+                                    <span>{formatRupiah(s.serviceCharge)}</span>
+                                  </div>
+                                )}
+                                {enableTax && (
+                                  <div className="flex justify-between">
+                                    <span>PB1 ({TAX_RATE * 100}%)</span>
+                                    <span>{formatRupiah(s.tax)}</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex justify-between font-bold text-foreground pt-1 border-t border-border">
+                                <span>Total</span>
+                                <span className="text-primary">{formatRupiah(s.total)}</span>
+                              </div>
+                            </>
+                          ) : (
+                            <p className="text-xs text-muted-foreground italic">Belum ada item</p>
                           )}
-                          {enableTax && (
-                            <div className="flex justify-between">
-                              <span>PB1 ({TAX_RATE * 100}%)</span>
-                              <span>{formatRupiah(s.tax)}</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex justify-between font-bold text-foreground pt-1 border-t border-border">
-                          <span>Total</span>
-                          <span className="text-primary">{formatRupiah(s.total)}</span>
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-xs text-muted-foreground italic">Belum ada item</p>
-                    )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </motion.div>
                 ))}
               </div>
@@ -384,6 +422,26 @@ const Index = () => {
         )}
       </div>
       <Footer />
+
+      <AlertDialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
+        <AlertDialogContent className="max-w-sm w-[calc(100%-2rem)] rounded-xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Hapus Semua Data?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Semua data input untuk bill ini akan dihapus. Tindakan ini tidak bisa dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-lg">Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={resetData} className="rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
@@ -395,6 +453,7 @@ function PersonItemCard({ person, onAddItem, onRemoveItem, onUpdateItem }: { per
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editPrice, setEditPrice] = useState("");
+  const [collapsed, setCollapsed] = useState(false);
 
   const handleAdd = () => {
     const price = parseFloat(itemPrice);
@@ -419,55 +478,97 @@ function PersonItemCard({ person, onAddItem, onRemoveItem, onUpdateItem }: { per
     }
   };
 
+  const itemTotal = person.items.reduce((sum, i) => sum + i.price, 0);
+
   return (
-    <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-      <h3 className="font-semibold text-foreground">{person.name}</h3>
-      <div className="flex flex-wrap gap-2">
-        <input type="text" placeholder="Nama item..." value={itemName} onChange={(e) => setItemName(e.target.value)} className="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-ring focus:ring-2" />
-        <input
-          type="number"
-          placeholder="Harga (Rp)"
-          value={itemPrice}
-          onChange={(e) => setItemPrice(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-          className="min-w-0 w-28 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-ring focus:ring-2"
-        />
-        <button onClick={handleAdd} className="flex shrink-0 items-center justify-center rounded-lg bg-primary px-3 py-2 text-primary-foreground transition-colors hover:opacity-90">
-          <Plus className="h-4 w-4" />
-        </button>
-      </div>
-      <AnimatePresence>
-        {person.items.map((item) => (
-          <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
-            {editingId === item.id ? (
-              <div className="flex flex-1 items-center gap-2">
-                <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary" autoFocus />
-                <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleUpdate()} className="min-w-0 w-20 rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary" />
-                <button onClick={handleUpdate} className="text-primary hover:text-primary/80 transition-colors">
-                  <Check className="h-4 w-4" />
-                </button>
-                <button onClick={() => setEditingId(null)} className="text-muted-foreground hover:text-foreground transition-colors">
-                  <X className="h-4 w-4" />
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      {/* Collapsible Header */}
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/30 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-foreground">{person.name}</h3>
+          {person.items.length > 0 && (
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/10 px-1.5 text-[10px] font-bold text-primary">
+              {person.items.length}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {person.items.length > 0 && (
+            <span className="text-xs font-medium text-primary">{formatRupiah(itemTotal)}</span>
+          )}
+          <motion.div
+            animate={{ rotate: collapsed ? -90 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          </motion.div>
+        </div>
+      </button>
+
+      {/* Collapsible Body */}
+      <AnimatePresence initial={false}>
+        {!collapsed && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pt-1 pb-4 space-y-3">
+              <div className="flex flex-wrap gap-2">
+                <input type="text" placeholder="Nama item..." value={itemName} onChange={(e) => setItemName(e.target.value)} className="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-ring focus:ring-2" />
+                <input
+                  type="number"
+                  placeholder="Harga"
+                  value={itemPrice}
+                  onChange={(e) => setItemPrice(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                  className="min-w-0 w-32 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-ring focus:ring-2"
+                />
+                <button onClick={handleAdd} className="flex shrink-0 items-center justify-center rounded-lg bg-primary px-3 py-2 text-primary-foreground transition-colors hover:opacity-90">
+                  <Plus className="h-4 w-4" />
                 </button>
               </div>
-            ) : (
-              <>
-                <div className="text-sm">
-                  <span className="font-medium text-foreground">{item.name}</span>
-                  <span className="ml-2 text-primary font-medium">{formatRupiah(item.price)}</span>
-                </div>
-                <div className="flex gap-1">
-                  <button onClick={() => startEditing(item)} className="rounded-lg p-1 text-muted-foreground hover:text-primary transition-colors">
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                  <button onClick={() => onRemoveItem(item.id)} className="rounded-lg p-1 text-muted-foreground hover:text-destructive transition-colors">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </>
-            )}
+              <AnimatePresence>
+                {person.items.map((item) => (
+                  <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
+                    {editingId === item.id ? (
+                      <div className="flex flex-1 items-center gap-2">
+                        <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary" autoFocus />
+                        <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleUpdate()} className="min-w-0 w-20 rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary" />
+                        <button onClick={handleUpdate} className="text-primary hover:text-primary/80 transition-colors">
+                          <Check className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => setEditingId(null)} className="text-muted-foreground hover:text-foreground transition-colors">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="text-sm">
+                          <span className="font-medium text-foreground">{item.name}</span>
+                          <span className="ml-2 text-primary font-medium">{formatRupiah(item.price)}</span>
+                        </div>
+                        <div className="flex gap-1">
+                          <button onClick={() => startEditing(item)} className="rounded-lg p-1 text-muted-foreground hover:text-primary transition-colors">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button onClick={() => onRemoveItem(item.id)} className="rounded-lg p-1 text-muted-foreground hover:text-destructive transition-colors">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
           </motion.div>
-        ))}
+        )}
       </AnimatePresence>
     </div>
   );

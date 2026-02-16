@@ -1,7 +1,17 @@
 import { useState, useMemo, useEffect } from "react";
 import { Person, formatRupiah, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/bill";
 import { PeopleSection } from "@/components/PeopleSection";
-import { ArrowLeft, CheckCircle2, Share2, Copy, Trash2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Share2, Copy, Trash2, MessageCircle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -11,6 +21,32 @@ let nextId = 1;
 const genId = () => String(nextId++);
 
 const SplitBill = () => {
+  const isMobile = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+
+  const shareToWhatsApp = () => {
+    if (persons.length === 0 || calculation.base === 0) {
+      toast.error("Data kosong! Tambahkan data terlebih dahulu.");
+      return;
+    }
+    const lines = [
+      `🧾 Split Bill`,
+      billName ? `Judul: ${billName}` : undefined,
+      `Total: ${formatRupiah(calculation.total)}`,
+      "----------------------------------",
+      "",
+      ...persons.map((p) => `• ${p.name}: ${formatRupiah(calculation.perPerson)}`),
+      "",
+      "----------------------------------",
+      "Patungan by Nexteam",
+    ];
+    const text = lines.filter((l) => l !== undefined).join("\n");
+    if (navigator.share) {
+      navigator.share({ text });
+    } else {
+      const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      window.open(url, "_blank");
+    }
+  };
   // Helper to get title from URL immediately
   const getTitleFromUrl = () => {
     const params = new URLSearchParams(window.location.search);
@@ -84,24 +120,25 @@ const SplitBill = () => {
     setPersons((prev) => prev.filter((p) => p.id !== id));
   };
 
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+
   const resetData = () => {
-    if (confirm("Hapus semua data input untuk bill ini?")) {
-      setBillName(initialTitle);
-      setTotalBill("");
-      setPersons([]);
-      setEnableService(true);
-      setEnableTax(true);
-      setCustomService("");
-      setCustomTax("");
-      localStorage.removeItem(`patungan_${initialTitle}_billName`);
-      localStorage.removeItem(`patungan_${initialTitle}_totalBill`);
-      localStorage.removeItem(`patungan_${initialTitle}_persons`);
-      localStorage.removeItem(`patungan_${initialTitle}_enableService`);
-      localStorage.removeItem(`patungan_${initialTitle}_enableTax`);
-      localStorage.removeItem(`patungan_${initialTitle}_customService`);
-      localStorage.removeItem(`patungan_${initialTitle}_customTax`);
-      toast.info("Data dibersihkan");
-    }
+    setBillName(initialTitle);
+    setTotalBill("");
+    setPersons([]);
+    setEnableService(true);
+    setEnableTax(true);
+    setCustomService("");
+    setCustomTax("");
+    localStorage.removeItem(`patungan_${initialTitle}_billName`);
+    localStorage.removeItem(`patungan_${initialTitle}_totalBill`);
+    localStorage.removeItem(`patungan_${initialTitle}_persons`);
+    localStorage.removeItem(`patungan_${initialTitle}_enableService`);
+    localStorage.removeItem(`patungan_${initialTitle}_enableTax`);
+    localStorage.removeItem(`patungan_${initialTitle}_customService`);
+    localStorage.removeItem(`patungan_${initialTitle}_customTax`);
+    toast.info("Data dibersihkan");
+    setResetConfirmOpen(false);
   };
 
   const calculation = useMemo(() => {
@@ -158,7 +195,7 @@ const SplitBill = () => {
             </Link>
             <h1 className="text-xl font-bold text-foreground">Split Bill</h1>
           </div>
-          <button onClick={resetData} className="flex h-9 w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-destructive transition-colors" title="Hapus Data">
+          <button onClick={() => setResetConfirmOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-destructive transition-colors" title="Hapus Data">
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
@@ -204,7 +241,7 @@ const SplitBill = () => {
                 <input
                   type="number"
                   min="0"
-                  placeholder="Custom"
+                  placeholder="Rp Custom"
                   value={customService}
                   onChange={(e) => setCustomService(e.target.value)}
                   className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none ring-ring focus:ring-2"
@@ -226,7 +263,7 @@ const SplitBill = () => {
                 <input
                   type="number"
                   min="0"
-                  placeholder="Custom"
+                  placeholder="Rp Custom"
                   value={customTax}
                   onChange={(e) => setCustomTax(e.target.value)}
                   className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none ring-ring focus:ring-2"
@@ -254,14 +291,22 @@ const SplitBill = () => {
                 <CheckCircle2 className="h-5 w-5 text-primary" />
                 <h2 className="font-bold text-foreground">Hasil Split</h2>
               </div>
-              <button onClick={copyAll} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                <Share2 className="h-4 w-4" />
-                Salin Semua
-              </button>
+              <div className="flex gap-2">
+                <button onClick={copyAll} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <Share2 className="h-4 w-4" />
+                  Salin Semua
+                </button>
+                {isMobile && (
+                  <button onClick={shareToWhatsApp} className="flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 transition-colors" title="Share ke WhatsApp">
+                    <MessageCircle className="h-4 w-4" />
+                    WhatsApp
+                  </button>
+                )}
+              </div>
             </div>
 
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="rounded-xl bg-foreground p-5 text-center">
-              <p className="text-sm text-muted">Per orang</p>
+              <p className="text-sm text-muted">Per Teman</p>
               <p className="text-3xl font-bold text-background">{formatRupiah(calculation.perPerson)}</p>
             </motion.div>
 
@@ -285,6 +330,26 @@ const SplitBill = () => {
         )}
       </div>
       <Footer />
+
+      <AlertDialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
+        <AlertDialogContent className="max-w-sm w-[calc(100%-2rem)] rounded-xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Hapus Semua Data?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Semua data input untuk bill ini akan dihapus. Tindakan ini tidak bisa dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-lg">Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={resetData} className="rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

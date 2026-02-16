@@ -1,12 +1,16 @@
 import { Link } from "react-router-dom";
-import { SplitSquareVertical, Receipt, Utensils, Wallet } from "lucide-react";
+import { SplitSquareVertical, Receipt, Utensils, Wallet, StickyNote } from "lucide-react";
 import { motion } from "framer-motion";
 import Footer from "@/components/Footer";
 import CoffeeBubble from "@/components/CoffeeBubble";
+import HelpGuide from "@/components/HelpGuide";
+import SettingsDialog from "@/components/SettingsDialog";
 
 const Home = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <HelpGuide />
+      <SettingsDialog />
       <CoffeeBubble />
       <div className="w-full max-w-md space-y-8 text-center flex-1 mx-auto flex flex-col items-center justify-center px-4 md:px-0">
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
@@ -42,9 +46,21 @@ const Home = () => {
             </Link>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+            <Link to="/notes" className="flex items-center gap-4 rounded-2xl border border-border bg-card p-5 text-left transition-all hover:shadow-md hover:border-green-400">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400">
+                <StickyNote className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 className="font-bold text-card-foreground">Catatan</h2>
+                <p className="text-sm text-muted-foreground">Catat pengeluaran saat trip atau belanja</p>
+              </div>
+            </Link>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
             <a href="https://kantongin.vercel.app/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 rounded-2xl border border-border bg-card p-5 text-left transition-all hover:shadow-md hover:border-blue-400">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
                 <Wallet className="h-6 w-6" />
               </div>
               <div>

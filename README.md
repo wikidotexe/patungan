@@ -1,76 +1,169 @@
-# Patungan
+# 💰 Patungan
 
-Bagi tagihan dengan mudah • Pajak & Service otomatis
+**Bagi tagihan dengan mudah • Pajak & Service otomatis**
 
+Aplikasi web untuk membagi tagihan dengan teman-teman secara mudah dan akurat. Mendukung perhitungan pajak, service charge, dan pembagian custom per item.
 
-## Project info
+---
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## ✨ Fitur Utama
 
-## How can I edit this code?
+- 🧮 **Split Bill Otomatis** - Bagi tagihan secara merata dengan perhitungan pajak & service otomatis
+- 🎯 **Custom Split Bill** - Tentukan siapa yang bayar item apa
+- 📊 **Ringkasan Detail** - Lihat breakdown pembayaran per orang
+- 📱 **Mobile Responsive** - Tampilan optimal di semua perangkat
+- 📤 **Share ke WhatsApp** - Bagikan hasil perhitungan langsung ke WhatsApp
+- 📋 **Copy to Clipboard** - Salin ringkasan pembayaran dengan satu klik
+- 🎓 **Tutorial Interaktif** - Panduan langkah demi langkah untuk pengguna baru
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## 🚀 Quick Start
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js (v18 atau lebih tinggi)
+- npm atau bun
 
-**Use your preferred IDE**
+### Installation
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+```bash
+# Clone repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Masuk ke direktori project
+cd patungan
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
+# atau
+bun install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Jalankan development server
 npm run dev
+# atau
+bun dev
 ```
 
-**Edit a file directly in GitHub**
+Aplikasi akan berjalan di `http://localhost:5173`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## 🛠️ Tech Stack
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+| Technology | Purpose |
+|------------|---------|
+| **React 18** | UI Framework |
+| **TypeScript** | Type Safety |
+| **Vite** | Build Tool & Dev Server |
+| **Tailwind CSS** | Styling |
+| **shadcn/ui** | UI Components |
+| **Radix UI** | Accessible Component Primitives |
+| **React Router** | Routing |
+| **Framer Motion** | Animations |
+| **React Hook Form** | Form Management |
+| **Zod** | Schema Validation |
+| **Lucide React** | Icons |
+| **html2pdf.js** | PDF Export |
 
-## What technologies are used for this project?
+---
 
-This project is built with:
+## 📦 Available Scripts
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```bash
+# Development
+npm run dev          # Start dev server
+npm run build        # Build for production
+npm run build:dev    # Build in development mode
+npm run preview      # Preview production build
 
-## How can I deploy this project?
+# Code Quality
+npm run lint         # Run ESLint
+npm run test         # Run tests
+npm run test:watch   # Run tests in watch mode
+```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
+## 📁 Project Structure
 
-Yes, you can!
+```
+patungan/
+├── src/
+│   ├── components/     # Reusable UI components
+│   ├── pages/          # Page components
+│   ├── hooks/          # Custom React hooks
+│   ├── lib/            # Utility functions
+│   ├── App.tsx         # Main app component
+│   └── main.tsx        # Entry point
+├── public/             # Static assets
+└── dist/               # Build output
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## 🎨 Features in Detail
+
+### Split Bill
+Bagi tagihan secara merata dengan fitur:
+- Input jumlah teman
+- Tambah item dengan nama dan harga
+- Perhitungan otomatis pajak & service
+- Ringkasan per orang
+
+### Custom Split Bill
+Kontrol penuh siapa bayar apa:
+- Assign item ke orang tertentu
+- Satu item bisa dibagi beberapa orang
+- Item bersama untuk semua
+- Perhitungan proporsional
+
+### Share & Export
+- Copy ringkasan ke clipboard
+- Share langsung ke WhatsApp
+- Format yang rapi dan mudah dibaca
+
+---
+
+## 🌐 Deployment
+
+### Vercel (Recommended)
+Project ini sudah dikonfigurasi untuk deploy di Vercel dengan `vercel.json`.
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel
+```
+
+### Manual Build
+```bash
+npm run build
+# Upload folder 'dist' ke hosting pilihan Anda
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Silakan buat issue atau pull request.
+
+---
+
+## 📄 License
+
+This project is open source and available under the MIT License.
+
+---
+
+## 👨‍💻 Author
+
+Built with ❤️ using [Lovable](https://lovable.dev)
+
+---
+
+## 📞 Support
+
+Jika ada pertanyaan atau masalah, silakan buat issue di repository ini.
