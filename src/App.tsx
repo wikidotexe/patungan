@@ -10,6 +10,7 @@ import SplitBillTitle from "./pages/SplitBillTitle";
 import CustomSplit from "./pages/Index";
 import CustomSplitTitle from "./pages/CustomSplitTitle";
 import Notes from "./pages/Notes";
+import ChatAI from "./components/ChatAI";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,10 +33,10 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+        <ChatAI />
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );
 
 export default App;
-
