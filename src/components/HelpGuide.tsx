@@ -1,4 +1,5 @@
-import { HelpCircle, Receipt, Utensils, Users, Calculator, Share2, Wallet, Settings, Moon, StickyNote } from "lucide-react";
+import { useState } from "react";
+import { HelpCircle, Receipt, Utensils, Users, Calculator, Share2, Wallet, Settings, Moon, StickyNote, ChevronDown } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -7,7 +8,7 @@ import {
     DialogTrigger,
     DialogDescription,
 } from "@/components/ui/dialog";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const steps = [
     {
@@ -59,6 +60,8 @@ const features = [
 ];
 
 const HelpGuide = () => {
+    const [expandedStep, setExpandedStep] = useState<number | null>(0); // Default expand first one
+
     return (
         <Dialog>
             <DialogTrigger asChild>
@@ -80,7 +83,7 @@ const HelpGuide = () => {
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-5 mt-2">
+                <div className="space-y-4 mt-2">
                     {/* Step-by-step guides */}
                     {steps.map((section, idx) => (
                         <motion.div
@@ -88,26 +91,50 @@ const HelpGuide = () => {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: idx * 0.1 }}
-                            className="space-y-3"
+                            className="space-y-2 border border-border rounded-xl overflow-hidden"
                         >
-                            <div className="flex items-center gap-2">
-                                <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${section.color}`}>
-                                    <section.icon className="h-4 w-4" />
+                            <button
+                                onClick={() => setExpandedStep(expandedStep === idx ? null : idx)}
+                                className="w-full flex items-center justify-between p-3 bg-muted/30 hover:bg-muted/50 transition-colors"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${section.color}`}>
+                                        <section.icon className="h-4 w-4" />
+                                    </div>
+                                    <h3 className="font-semibold text-foreground text-sm text-left">
+                                        {section.title}
+                                    </h3>
                                 </div>
-                                <h3 className="font-semibold text-foreground text-sm">
-                                    {section.title}
-                                </h3>
-                            </div>
-                            <ol className="space-y-1.5 pl-10">
-                                {section.steps.map((step, i) => (
-                                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
-                                            {i + 1}
-                                        </span>
-                                        <span className="pt-0.5">{step}</span>
-                                    </li>
-                                ))}
-                            </ol>
+                                <motion.div
+                                    animate={{ rotate: expandedStep === idx ? 0 : -90 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                </motion.div>
+                            </button>
+
+                            <AnimatePresence initial={false}>
+                                {expandedStep === idx && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: "auto", opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.25, ease: "easeInOut" }}
+                                        className="overflow-hidden"
+                                    >
+                                        <ol className="space-y-2 pb-3 px-3 pt-1">
+                                            {section.steps.map((step, i) => (
+                                                <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
+                                                        {i + 1}
+                                                    </span>
+                                                    <span className="pt-0.5">{step}</span>
+                                                </li>
+                                            ))}
+                                        </ol>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </motion.div>
                     ))}
 
