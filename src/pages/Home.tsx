@@ -119,7 +119,7 @@ const Home = () => {
                             to={feature.to}
                             className="flex items-center justify-center gap-2 w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground shadow-sm hover:opacity-90 active:scale-[0.98] transition-all"
                           >
-                            Mulai Sekarang
+                            Cus Cobain
                             <ArrowRight className="h-4 w-4" />
                           </Link>
                         ) : (

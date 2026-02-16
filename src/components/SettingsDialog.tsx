@@ -27,7 +27,6 @@ const SettingsDialog = () => {
     const { theme, setTheme } = useTheme();
     const [open, setOpen] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
-    const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem("patungan_gemini_api_key") || "");
 
     const deleteAllData = () => {
         const keysToRemove: string[] = [];
@@ -122,35 +121,6 @@ const SettingsDialog = () => {
                                     <a href="https://www.nofileexistshere.my.id/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">
                                         Nexteam
                                     </a>
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Gemini API Key */}
-                        <div className="rounded-xl border border-border bg-background p-4 space-y-3">
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                                    <Code2 className="h-4 w-4" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-semibold text-foreground">Gemini API Key</p>
-                                    <p className="text-xs text-muted-foreground">Untuk fitur Chat AI</p>
-                                </div>
-                            </div>
-                            <div className="pl-12">
-                                <input
-                                    type="password"
-                                    placeholder="Masukkan API Key..."
-                                    value={geminiKey}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        setGeminiKey(val);
-                                        localStorage.setItem("patungan_gemini_api_key", val);
-                                    }}
-                                    className="w-full rounded-lg border border-input bg-card px-3 py-2 text-xs outline-none ring-ring focus:ring-2"
-                                />
-                                <p className="text-[10px] text-muted-foreground mt-1.5 leading-relaxed">
-                                    Dapatkan API Key di <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">Google AI Studio</a>. Data tersimpan lokal.
                                 </p>
                             </div>
                         </div>

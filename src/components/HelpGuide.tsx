@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { HelpCircle, Receipt, Utensils, Users, Calculator, Share2, Wallet, Settings, Moon, StickyNote, ChevronDown } from "lucide-react";
+import { HelpCircle, Receipt, Utensils, Users, Calculator, Share2, Wallet, Settings, Moon, StickyNote, ChevronDown, Sparkles } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -47,6 +47,18 @@ const steps = [
             "Atur urutan catatan dengan tombol ↑ ↓",
         ],
     },
+    {
+        icon: Sparkles,
+        title: "Patungan AI",
+        color: "text-blue-600 bg-blue-100 dark:bg-blue-950 dark:text-blue-400",
+        steps: [
+            "Klik ikon ✨ di pojok kiri bawah pada Halaman Utama",
+            "Tanyakan apa saja seputar pengeluaran, pengingat, atau tips trip",
+            "AI ini sudah ditalai (pre-configured) dengan info aplikasi",
+            "Gunakan ikon 🗑️ untuk hapus riwayat chat",
+            "Klik ikon Maximize/Minimize (Mode HP) untuk atur ukuran",
+        ],
+    },
 ];
 
 const features = [
@@ -56,6 +68,7 @@ const features = [
     { icon: Wallet, label: "Data tersimpan otomatis" },
     { icon: Moon, label: "Dark mode tersedia" },
     { icon: StickyNote, label: "Catatan untuk trip & belanja" },
+    { icon: Sparkles, label: "AI Assistant (Gemini 2.5)" },
     { icon: Settings, label: "Pengaturan di tombol ⚙️" },
 ];
 
