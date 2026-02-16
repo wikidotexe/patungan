@@ -537,15 +537,17 @@ function PersonItemCard({ person, onAddItem, onRemoveItem, onUpdateItem }: { per
                 {person.items.map((item) => (
                   <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
                     {editingId === item.id ? (
-                      <div className="flex flex-1 items-center gap-2">
-                        <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary" autoFocus />
-                        <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleUpdate()} className="min-w-0 w-20 rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary" />
-                        <button onClick={handleUpdate} className="text-primary hover:text-primary/80 transition-colors">
-                          <Check className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => setEditingId(null)} className="text-muted-foreground hover:text-foreground transition-colors">
-                          <X className="h-4 w-4" />
-                        </button>
+                      <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+                        <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="min-w-0 flex-1 basis-[60%] rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary" autoFocus />
+                        <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleUpdate()} className="min-w-0 w-20 flex-shrink-0 rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary" />
+                        <div className="flex gap-1">
+                          <button onClick={handleUpdate} className="text-primary hover:text-primary/80 transition-colors">
+                            <Check className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => setEditingId(null)} className="text-muted-foreground hover:text-foreground transition-colors">
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <>
