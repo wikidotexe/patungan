@@ -1,20 +1,21 @@
 # 💰 Patungan
 
-**Bagi tagihan dengan mudah • Pajak & Service otomatis**
+**Bagi tagihan dengan mudah • Pajak & Service otomatis • AI Assistant**
 
-Aplikasi web untuk membagi tagihan dengan teman-teman secara mudah dan akurat. Mendukung perhitungan pajak, service charge, dan pembagian custom per item.
+Aplikasi web untuk membagi tagihan dengan teman-teman secara mudah dan akurat. Mendukung perhitungan pajak, service charge, pembagian custom per item, dan asisten AI terintegrasi.
 
 ---
 
 ## ✨ Fitur Utama
 
 - 🧮 **Split Bill Otomatis** - Bagi tagihan secara merata dengan perhitungan pajak & service otomatis
-- 🎯 **Custom Split Bill** - Tentukan siapa yang bayar item apa
-- 📊 **Ringkasan Detail** - Lihat breakdown pembayaran per orang
-- 📱 **Mobile Responsive** - Tampilan optimal di semua perangkat
+- 🎯 **Custom Split Bill** - Tentukan siapa yang bayar item apa (Ekspor PDF & Share WA)
+- 📝 **Catatan (Notes)** - Catat daftar belanja atau rencana trip dengan fitur reorder & filter
+- 🤖 **Patungan AI** - Asisten cerdas bertenaga Gemini 2.5 Flash Lite untuk tips trip & keuangan
+- 📊 **Ringkasan Detail** - Lihat breakdown pembayaran per orang secara transparan
+- 📱 **Mobile Responsive** - Tampilan optimal di semua perangkat (Full-screen Chat on Mobile)
 - 📤 **Share ke WhatsApp** - Bagikan hasil perhitungan langsung ke WhatsApp
 - 📋 **Copy to Clipboard** - Salin ringkasan pembayaran dengan satu klik
-- 🎓 **Tutorial Interaktif** - Panduan langkah demi langkah untuk pengguna baru
 
 ---
 
@@ -39,13 +40,25 @@ npm install
 # atau
 bun install
 
+# Konfigurasi Environment Variables
+cp .env.example .env # Jika ada, atau buat file .env baru
+```
+
+Tambahkan API Key Anda di file `.env`:
+```env
+VITE_GEMINI_API_KEY=AIzaSy...
+```
+
+### Running Locally
+
+```bash
 # Jalankan development server
 npm run dev
 # atau
 bun dev
 ```
 
-Aplikasi akan berjalan di `http://localhost:5173`
+Aplikasi akan berjalan di `http://localhost:8080` (Default Port)
 
 ---
 
@@ -58,11 +71,9 @@ Aplikasi akan berjalan di `http://localhost:5173`
 | **Vite** | Build Tool & Dev Server |
 | **Tailwind CSS** | Styling |
 | **shadcn/ui** | UI Components |
-| **Radix UI** | Accessible Component Primitives |
-| **React Router** | Routing |
-| **Framer Motion** | Animations |
-| **React Hook Form** | Form Management |
-| **Zod** | Schema Validation |
+| **Framer Motion** | Animations & Transitions |
+| **Gemini AI** | AI Engine (Gemini 2.5 Flash Lite) |
+| **Next-Themes** | Dark Mode Support |
 | **Lucide React** | Icons |
 | **html2pdf.js** | PDF Export |
 
@@ -104,39 +115,42 @@ patungan/
 
 ## 🎨 Features in Detail
 
-### Split Bill
+### 🧮 Split Bill
 Bagi tagihan secara merata dengan fitur:
 - Input jumlah teman
 - Tambah item dengan nama dan harga
 - Perhitungan otomatis pajak & service
 - Ringkasan per orang
 
-### Custom Split Bill
+### 🎯 Custom Split Bill
 Kontrol penuh siapa bayar apa:
 - Assign item ke orang tertentu
 - Satu item bisa dibagi beberapa orang
 - Item bersama untuk semua
 - Perhitungan proporsional
 
-### Share & Export
-- Copy ringkasan ke clipboard
-- Share langsung ke WhatsApp
-- Format yang rapi dan mudah dibaca
+### 📝 Catatan (Notes)
+- Simpan daftar belanja atau detail trip
+- Fitur drag-and-drop style reordering (Up/Down)
+- Konfirmasi hapus yang aman
+- Tersimpan otomatis di LocalStorage
+
+### 🤖 Patungan AI
+- Asisten bertenaga Gemini 2.5 Flash Lite
+- Paham konteks aplikasi (Split Bill, Notes, dll)
+- Responsive UI (Floating di Desktop, Full-screen di Mobile)
+- Mode Maximize/Minimize untuk kenyamanan di HP
 
 ---
 
 ## 🌐 Deployment
 
 ### Vercel (Recommended)
-Project ini sudah dikonfigurasi untuk deploy di Vercel dengan `vercel.json`.
+Project ini sudah dikonfigurasi untuk deploy di Vercel dengan `vercel.json` untuk mendukung SPA routing.
 
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel
-```
+1. Hubungkan repository ke Vercel.
+2. Tambahkan Environment Variable: `VITE_GEMINI_API_KEY`.
+3. Klik **Deploy**.
 
 ### Manual Build
 ```bash
@@ -160,7 +174,7 @@ This project is open source and available under the MIT License.
 
 ## 👨‍💻 Author
 
-Built with ❤️ using [Lovable](https://lovable.dev)
+Built with ❤️ using [Nexteam](https://www.nofileexistshere.my.id/)
 
 ---
 
