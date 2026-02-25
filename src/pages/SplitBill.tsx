@@ -58,17 +58,14 @@ const SplitBill = () => {
   // Load data from Supabase on mount
   useEffect(() => {
     if (!initialTitle) {
-      console.log("No title in URL");
       setIsLoading(false);
       return;
     }
 
     const loadData = async () => {
-      console.log("📥 Loading bill data for title:", initialTitle);
       const result = await loadBillFromSupabase(initialTitle);
       if (result) {
         const { bill, people } = result;
-        console.log("📥 Data loaded successfully");
         setBillName(bill.bill_name || initialTitle);
         setTotalBill(bill.total_bill?.toString() || "");
         setPersons(
@@ -82,7 +79,6 @@ const SplitBill = () => {
         setCustomService(bill.custom_service || "");
         setCustomTax(bill.custom_tax || "");
       } else {
-        console.log("⚠️ No data found for this bill");
       }
       setIsLoading(false);
     };

@@ -71,17 +71,14 @@ const Index = () => {
   // Load data from Supabase on mount
   useEffect(() => {
     if (!initialTitle) {
-      console.log("No title in URL");
       setIsLoading(false);
       return;
     }
 
     const loadData = async () => {
-      console.log("📥 Loading custom bill data for title:", initialTitle);
       const result = await loadCustomBillFromSupabase(initialTitle);
       if (result) {
         const { people, items } = result;
-        console.log("📥 Data loaded successfully");
         const personMapped = people.map((p) => ({
           id: p.person_id,
           name: p.person_name,
@@ -99,7 +96,6 @@ const Index = () => {
         setCustomService(result.bill.custom_service || "");
         setCustomTax(result.bill.custom_tax || "");
       } else {
-        console.log("⚠️ No data found for this custom bill");
       }
       setIsLoading(false);
     };

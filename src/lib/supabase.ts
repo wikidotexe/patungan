@@ -62,7 +62,6 @@ export interface CustomBillItem {
 // Simple Split Bill Functions
 export async function loadBillFromSupabase(title: string) {
   try {
-    console.log("🔍 Loading bill with title:", title);
 
     const { data: bill, error: billError } = await supabase.from("bills").select("*").eq("title", title).single();
 
@@ -71,7 +70,6 @@ export async function loadBillFromSupabase(title: string) {
       return null;
     }
 
-    console.log("✅ Bill found:", bill);
 
     const { data: people, error: peopleError } = await supabase.from("bill_people").select("*").eq("bill_id", bill.id);
 
@@ -80,7 +78,6 @@ export async function loadBillFromSupabase(title: string) {
       return null;
     }
 
-    console.log("✅ People loaded:", people);
 
     return {
       bill,
@@ -94,7 +91,6 @@ export async function loadBillFromSupabase(title: string) {
 
 export async function saveBillToSupabase(title: string, billName: string, totalBill: string, persons: Array<{ id: string; name: string }>, enableService: boolean, enableTax: boolean, customService: string, customTax: string) {
   try {
-    console.log("💾 Saving bill - Title:", title);
 
     // First, check if bill exists
     const { data: existingBill, error: checkError } = await supabase.from("bills").select("id").eq("title", title).maybeSingle();
@@ -104,7 +100,6 @@ export async function saveBillToSupabase(title: string, billName: string, totalB
 
     if (existingBill) {
       // Update existing bill
-      console.log("📝 Bill exists, updating...");
       const { data: updatedBill, error: updateError } = await supabase
         .from("bills")
         .update({
@@ -124,7 +119,6 @@ export async function saveBillToSupabase(title: string, billName: string, totalB
       billError = updateError;
     } else {
       // Insert new bill
-      console.log("✨ Creating new bill...");
       const { data: newBill, error: insertError } = await supabase
         .from("bills")
         .insert({
@@ -143,7 +137,6 @@ export async function saveBillToSupabase(title: string, billName: string, totalB
       billError = insertError;
     }
 
-    console.log("✅ Bill saved successfully:", bill);
 
     // Delete old people
     const { error: deleteError } = await supabase.from("bill_people").delete().eq("bill_id", bill.id);
@@ -153,7 +146,6 @@ export async function saveBillToSupabase(title: string, billName: string, totalB
 
     // Insert new people
     if (persons.length > 0) {
-      console.log("💾 Saving", persons.length, "people...");
       const { error: peopleError } = await supabase.from("bill_people").insert(
         persons.map((p) => ({
           bill_id: bill.id,
@@ -166,10 +158,8 @@ export async function saveBillToSupabase(title: string, billName: string, totalB
         console.error("❌ Error saving people:", peopleError);
         return false;
       }
-      console.log("✅ People saved successfully");
     }
 
-    console.log("✅ All data saved successfully!");
     return true;
   } catch (error) {
     console.error("❌ Error in saveBillToSupabase:", error);
@@ -195,7 +185,6 @@ export async function deleteBillFromSupabase(title: string) {
 // Custom Split Bill Functions
 export async function loadCustomBillFromSupabase(title: string) {
   try {
-    console.log("🔍 Loading custom bill with title:", title);
 
     const { data: bill, error: billError } = await supabase.from("custom_bills").select("*").eq("title", title).single();
 
@@ -204,7 +193,6 @@ export async function loadCustomBillFromSupabase(title: string) {
       return null;
     }
 
-    console.log("✅ Custom bill found:", bill);
 
     const [{ data: people }, { data: items }] = await Promise.all([
       supabase.from("custom_bill_people").select("*").eq("custom_bill_id", bill.id),
@@ -224,8 +212,6 @@ export async function loadCustomBillFromSupabase(title: string) {
         .eq("custom_bill_id", bill.id),
     ]);
 
-    console.log("✅ People loaded:", people);
-    console.log("✅ Items loaded:", items);
 
     return {
       bill,
@@ -252,7 +238,6 @@ export async function saveCustomBillToSupabase(
   customTax: string,
 ) {
   try {
-    console.log("💾 Saving custom bill - Title:", title);
 
     // First, check if bill exists
     const { data: existingBill, error: checkError } = await supabase.from("custom_bills").select("id").eq("title", title).maybeSingle();
@@ -262,7 +247,6 @@ export async function saveCustomBillToSupabase(
 
     if (existingBill) {
       // Update existing bill
-      console.log("📝 Custom bill exists, updating...");
       const { data: updatedBill, error: updateError } = await supabase
         .from("custom_bills")
         .update({
@@ -280,7 +264,6 @@ export async function saveCustomBillToSupabase(
       billError = updateError;
     } else {
       // Insert new bill
-      console.log("✨ Creating new custom bill...");
       const { data: newBill, error: insertError } = await supabase
         .from("custom_bills")
         .insert({
@@ -305,7 +288,6 @@ export async function saveCustomBillToSupabase(
 
     // Insert new people
     if (persons.length > 0) {
-      console.log("💾 Saving", persons.length, "people...");
       const { error: peopleError } = await supabase.from("custom_bill_people").insert(
         persons.map((p) => ({
           custom_bill_id: bill.id,
@@ -318,7 +300,6 @@ export async function saveCustomBillToSupabase(
         console.error("❌ Error saving people:", peopleError);
         return false;
       }
-      console.log("✅ People saved successfully");
     }
 
     // Delete old items and assignments
@@ -329,7 +310,6 @@ export async function saveCustomBillToSupabase(
 
     // Insert new items and assignments
     if (items.length > 0) {
-      console.log("💾 Saving", items.length, "items...");
       for (const item of items) {
         const { data: insertedItem, error: itemError } = await supabase
           .from("custom_bill_items")
@@ -361,10 +341,8 @@ export async function saveCustomBillToSupabase(
           }
         }
       }
-      console.log("✅ Items saved successfully");
     }
 
-    console.log("✅ All custom bill data saved successfully!");
     return true;
   } catch (error) {
     console.error("❌ Error in saveCustomBillToSupabase:", error);
@@ -464,7 +442,6 @@ export async function deleteAllDataFromSupabase(): Promise<{ success: boolean; c
     if (notesError) console.warn("⚠️ Error deleting notes:", notesError);
 
     const count = (bills?.length ?? 0) + (customBills?.length ?? 0);
-    console.log(`✅ Deleted ${count} bills and all notes from Supabase`);
     return { success: true, count };
   } catch (error) {
     console.error("❌ Error in deleteAllDataFromSupabase:", error);
