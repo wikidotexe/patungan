@@ -1,4 +1,4 @@
-import { Settings as SettingsIcon, Moon, Sun, Trash2, Info, Code2 } from "lucide-react";
+import { Settings as SettingsIcon, Moon, Sun, Trash2, Info, Code2, Loader2 } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -20,6 +20,7 @@ import {
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { useState } from "react";
+import { deleteAllDataFromSupabase } from "@/lib/supabase";
 
 const APP_VERSION = "1.2.1";
 
@@ -28,16 +29,18 @@ const SettingsDialog = () => {
     const [open, setOpen] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
 
-    const deleteAllData = () => {
-        const keysToRemove: string[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && (key.startsWith("patungan_") || key.startsWith("custom_patungan_"))) {
-                keysToRemove.push(key);
-            }
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const deleteAllData = async () => {
+        setIsDeleting(true);
+        const { success, count } = await deleteAllDataFromSupabase();
+        setIsDeleting(false);
+
+        if (success) {
+            toast.success(`Semua data berhasil dihapus dari database!`);
+        } else {
+            toast.error("Gagal menghapus data. Coba lagi.");
         }
-        keysToRemove.forEach((key) => localStorage.removeItem(key));
-        toast.success(`${keysToRemove.length} data berhasil dihapus!`);
         setConfirmOpen(false);
         setOpen(false);
     };
@@ -157,9 +160,17 @@ const SettingsDialog = () => {
                         <AlertDialogCancel className="rounded-lg">Batal</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={deleteAllData}
-                            className="rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            disabled={isDeleting}
+                            className="rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-60"
                         >
-                            Hapus Semua
+                            {isDeleting ? (
+                                <span className="flex items-center gap-1.5">
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    Menghapus...
+                                </span>
+                            ) : (
+                                "Hapus Semua"
+                            )}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

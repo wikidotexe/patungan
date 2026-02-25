@@ -1,14 +1,45 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { SplitSquareVertical, Receipt, Utensils, Wallet, StickyNote, ChevronDown, ArrowRight } from "lucide-react";
+import { Receipt, Utensils, Wallet, StickyNote, ChevronDown, ArrowRight, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Footer from "@/components/Footer";
 import CoffeeBubble from "@/components/CoffeeBubble";
 import HelpGuide from "@/components/HelpGuide";
 import SettingsDialog from "@/components/SettingsDialog";
+import { UserSetupDialog } from "@/components/UserSetupDialog";
+import { AppUser, clearStoredUser } from "@/lib/userStore";
+
+function getInitials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+}
 
 const Home = () => {
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleLogout = () => {
+    clearStoredUser();
+    setProfileOpen(false);
+    window.location.reload();
+  };
 
   const features = [
     {
@@ -51,9 +82,61 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <UserSetupDialog onComplete={setUser} />
       <HelpGuide />
       <SettingsDialog />
       <CoffeeBubble />
+      {/* User avatar dropdown — fixed next to settings icon */}
+      {user && (
+        <motion.div
+          ref={profileRef}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="fixed top-4 right-16 z-50"
+        >
+          <button
+            onClick={() => setProfileOpen((p) => !p)}
+            className={`flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold shadow-sm hover:shadow-md hover:scale-105 transition-all ${profileOpen ? "ring-2 ring-primary/50 ring-offset-2 ring-offset-background" : ""}`}
+            aria-label={`User: ${user.username}`}
+          >
+            {getInitials(user.username)}
+          </button>
+
+          {/* Dropdown */}
+          <AnimatePresence>
+            {profileOpen && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -6 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -6 }}
+                transition={{ duration: 0.15 }}
+                className="absolute right-0 top-12 w-52 rounded-xl border border-border bg-card shadow-xl overflow-hidden origin-top-right"
+              >
+                {/* Profile info */}
+                <div className="px-4 py-3 border-b border-border">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                      {getInitials(user.username)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{user.username}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    </div>
+                  </div>
+                </div>
+                {/* Logout */}
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Keluar Sesi
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      )}
       <div className="w-full max-w-md space-y-8 text-center flex-1 mx-auto flex flex-col items-center justify-center px-4 md:px-0 py-12">
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">

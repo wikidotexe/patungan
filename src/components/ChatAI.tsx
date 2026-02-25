@@ -1,30 +1,33 @@
 import { useState, useRef, useEffect } from "react";
-import { Bot, X, Send, Trash2, Sparkles, MessageCircle, AlertCircle, Maximize2, Minimize2 } from "lucide-react";
+import { Bot, X, Send, Trash2, Sparkles, MessageCircle, Loader2, Maximize2, Minimize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { toast } from "sonner";
 import { useLocation } from "react-router-dom";
+import { getStoredUser } from "@/lib/userStore";
+import {
+    loadChatHistoryFromSupabase,
+    appendChatMessageToSupabase,
+    clearChatHistoryFromSupabase,
+} from "@/lib/supabase";
 
 interface Message {
     role: "user" | "model";
     content: string;
 }
 
-const STORAGE_KEY = "patungan_chat_history";
-const API_KEY_STORAGE_KEY = "patungan_gemini_api_key";
-
 const ChatAI = () => {
     const location = useLocation();
     const [isOpen, setIsOpen] = useState(false);
     const [isMaximized, setIsMaximized] = useState(true);
-    const [messages, setMessages] = useState<Message[]>(() => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        return saved ? JSON.parse(saved) : [];
-    });
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [isChatLoading, setIsChatLoading] = useState(false);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const [isMobile, setIsMobile] = useState(false);
+
+    const userEmail = getStoredUser()?.email ?? null;
 
     // Initial check and resize listener for mobile
     useEffect(() => {
@@ -34,6 +37,18 @@ const ChatAI = () => {
         return () => window.removeEventListener("resize", checkMobile);
     }, []);
 
+    // Load chat history from Supabase on mount
+    useEffect(() => {
+        if (!userEmail) return;
+        const load = async () => {
+            setIsChatLoading(true);
+            const rows = await loadChatHistoryFromSupabase(userEmail);
+            setMessages(rows.map((r) => ({ role: r.role, content: r.content })));
+            setIsChatLoading(false);
+        };
+        load();
+    }, [userEmail]);
+
     // Auto scroll to bottom
     useEffect(() => {
         if (scrollRef.current) {
@@ -41,14 +56,8 @@ const ChatAI = () => {
         }
     }, [messages, isLoading, isOpen, isMaximized]);
 
-    // Persist messages
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    }, [messages]);
-
     // Visibility logic: Only on Home page
     const isVisible = location.pathname === "/";
-
     if (!isVisible) return null;
 
     const handleSend = async () => {
@@ -65,22 +74,28 @@ const ChatAI = () => {
         setInput("");
         setIsLoading(true);
 
+        // Save user message to Supabase (fire-and-forget)
+        if (userEmail) {
+            appendChatMessageToSupabase(userEmail, "user", userMessage.content);
+        }
+
         try {
             const genAI = new GoogleGenerativeAI(apiKey);
             const model = genAI.getGenerativeModel({
                 model: "gemini-2.5-flash-lite",
-                systemInstruction: "Kamu adalah Patungan AI, asisten pintar untuk aplikasi 'Patungan By Nexteam'. Tugasmu adalah membantu pengguna memahami fitur aplikasi dan memberikan tips terkait pengelolaan pengeluaran atau rencana trip.\n\n" +
+                systemInstruction:
+                    "Kamu adalah Patungan AI, asisten pintar untuk aplikasi 'Patungan By Nexteam'. Tugasmu adalah membantu pengguna memahami fitur aplikasi dan memberikan tips terkait pengelolaan pengeluaran atau rencana trip.\n\n" +
                     "Fitur Aplikasi Patungan:\n" +
                     "1. Split Bill (Bagi Rata): Membagi total tagihan secara merata.\n" +
                     "2. Custom Split Bill: Membagi tagihan berdasarkan item per orang. Bisa ekspor PDF & share WhatsApp.\n" +
                     "3. Catatan (Notes): Mencatat daftar belanja/trip dengan fitur filter & reorder.\n" +
                     "4. Kantongin: Manajemen uang (link ke ekosistem Nexteam).\n" +
                     "5. Settings (⚙️): Ganti Dark/Light mode, atur API Key, atau hapus semua data.\n\n" +
-                    "Berikan jawaban yang ramah, ringkas, dan solutif dalam Bahasa Indonesia."
+                    "Berikan jawaban yang ramah, ringkas, dan solutif dalam Bahasa Indonesia.",
             });
 
             const chatSession = model.startChat({
-                history: messages.map(m => ({
+                history: messages.map((m) => ({
                     role: m.role,
                     parts: [{ text: m.content }],
                 })),
@@ -90,19 +105,30 @@ const ChatAI = () => {
             const response = await result.response;
             const text = response.text();
 
-            setMessages((prev) => [...prev, { role: "model", content: text }]);
+            const aiMessage: Message = { role: "model", content: text };
+            setMessages((prev) => [...prev, aiMessage]);
+
+            // Save AI response to Supabase (fire-and-forget)
+            if (userEmail) {
+                appendChatMessageToSupabase(userEmail, "model", text);
+            }
         } catch (error) {
             console.error("Gemini Error:", error);
             toast.error("Gagal menghubungi AI. Cek konfigurasi API Key.");
-            setMessages((prev) => [...prev, { role: "model", content: "Maaf, terjadi kesalahan saat menghubungi AI. Sesi chat ini sudah habis." }]);
+            setMessages((prev) => [
+                ...prev,
+                { role: "model", content: "Maaf, terjadi kesalahan saat menghubungi AI. Sesi chat ini sudah habis." },
+            ]);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const clearChat = () => {
+    const clearChat = async () => {
         setMessages([]);
-        localStorage.removeItem(STORAGE_KEY);
+        if (userEmail) {
+            await clearChatHistoryFromSupabase(userEmail);
+        }
         toast.success("Riwayat chat dihapus");
     };
 
@@ -128,7 +154,7 @@ const ChatAI = () => {
                         exit={isMobile && isMaximized ? { opacity: 0, y: "100%" } : { opacity: 0, y: 20, scale: 0.9 }}
                         transition={{
                             layout: { type: "spring", damping: 30, stiffness: 300 },
-                            opacity: { duration: 0.2 }
+                            opacity: { duration: 0.2 },
                         }}
                         className={`
                             fixed md:absolute bg-card border border-border shadow-2xl flex flex-col overflow-hidden
@@ -180,7 +206,12 @@ const ChatAI = () => {
 
                         {/* Messages */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
-                            {messages.length === 0 && (
+                            {isChatLoading ? (
+                                <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
+                                    <Loader2 className="h-6 w-6 animate-spin" />
+                                    <p className="text-xs">Memuat riwayat chat...</p>
+                                </div>
+                            ) : messages.length === 0 ? (
                                 <div className="text-center py-10 space-y-3">
                                     <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted">
                                         <MessageCircle className="h-8 w-8 text-muted-foreground" />
@@ -192,23 +223,20 @@ const ChatAI = () => {
                                         </p>
                                     </div>
                                 </div>
-                            )}
-
-                            {messages.map((m, i) => (
-                                <div
-                                    key={i}
-                                    className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-                                >
-                                    <div
-                                        className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm leading-relaxed ${m.role === "user"
-                                            ? "bg-primary text-primary-foreground rounded-tr-none"
-                                            : "bg-muted text-foreground rounded-tl-none border border-border"
-                                            }`}
-                                    >
-                                        {m.content}
+                            ) : (
+                                messages.map((m, i) => (
+                                    <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                                        <div
+                                            className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm leading-relaxed ${m.role === "user"
+                                                    ? "bg-primary text-primary-foreground rounded-tr-none"
+                                                    : "bg-muted text-foreground rounded-tl-none border border-border"
+                                                }`}
+                                        >
+                                            {m.content}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))
+                            )}
 
                             {isLoading && (
                                 <div className="flex justify-start">
@@ -233,14 +261,15 @@ const ChatAI = () => {
                                             handleSend();
                                         }
                                     }}
-                                    placeholder="Ketik pesan..."
+                                    placeholder={userEmail ? "Ketik pesan..." : "Login dulu untuk menggunakan AI Chat"}
+                                    disabled={!userEmail}
                                     rows={1}
-                                    className="w-full rounded-xl border border-input bg-card pl-4 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none max-h-32"
+                                    className="w-full rounded-xl border border-input bg-card pl-4 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none max-h-32 disabled:opacity-50 disabled:cursor-not-allowed"
                                     style={{ height: `${Math.min(input.split("\n").length * 20 + 44, 128)}px` }}
                                 />
                                 <button
                                     onClick={handleSend}
-                                    disabled={!input.trim() || isLoading}
+                                    disabled={!input.trim() || isLoading || !userEmail}
                                     className="absolute right-2 bottom-5 md:bottom-5 h-9 w-9 flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
                                 >
                                     <Send className="h-4 w-4" />

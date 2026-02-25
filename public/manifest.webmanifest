@@ -1,0 +1,17 @@
+{
+    "name": "Patungan",
+    "short_name": "Patungan",
+    "description": "Bagi tagihan dengan mudah • Pajak & Service otomatis",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#ffffff",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/apple-touch-icon.png",
+            "sizes": "180x180",
+            "type": "image/png"
+        }
+    ]
+}

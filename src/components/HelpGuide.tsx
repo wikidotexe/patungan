@@ -65,7 +65,7 @@ const features = [
     { icon: Users, label: "Tambah teman tanpa batas" },
     { icon: Calculator, label: "Pajak & service otomatis / custom" },
     { icon: Share2, label: "Copy, WhatsApp, & export PDF" },
-    { icon: Wallet, label: "Data tersimpan otomatis" },
+    { icon: Wallet, label: "Data tersimpan di cloud" },
     { icon: Moon, label: "Dark mode tersedia" },
     { icon: StickyNote, label: "Catatan untuk trip & belanja" },
     { icon: Sparkles, label: "AI Assistant (Gemini 2.5)" },
@@ -184,7 +184,8 @@ const HelpGuide = () => {
                     >
                         <p className="text-xs font-semibold text-primary">💡 Tips</p>
                         <ul className="text-xs text-muted-foreground space-y-0.5">
-                            <li>• Data tersimpan otomatis di browser, tidak perlu login</li>
+                            <li>• Masukkan nama & email saat pertama buka untuk simpan sesi</li>
+                            <li>• Klik ikon inisial di kanan atas untuk lihat profil atau keluar sesi</li>
                             <li>• Bisa buat banyak split bill sekaligus</li>
                             <li>• Gunakan Custom Split jika setiap orang pesan menu berbeda</li>
                             <li>• Klik ⚙️ untuk ganti dark mode atau hapus semua data</li>

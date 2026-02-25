@@ -2,87 +2,53 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, Trash2, Clock, Plus, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { getAllCustomBillsFromSupabase, deleteCustomBillFromSupabase } from "@/lib/supabase";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const CustomSplitTitle = () => {
   const [title, setTitle] = useState("");
-  const [savedBills, setSavedBills] = useState<{ title: string; createdAt: number }[]>([]);
+  const [savedBills, setSavedBills] = useState<{ title: string; created_at: string }[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [editingTitle, setEditingTitle] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const listStr = localStorage.getItem("custom_patungan_bill_list");
-    if (listStr) {
-      let list = JSON.parse(listStr);
-      // Migration: convert string[] to object[]
-      if (list.length > 0 && typeof list[0] === "string") {
-        list = list.map((title: string) => ({ title, createdAt: Date.now() }));
-        localStorage.setItem("custom_patungan_bill_list", JSON.stringify(list));
-      }
-      setSavedBills(list);
-    }
+    const loadBills = async () => {
+      const bills = await getAllCustomBillsFromSupabase();
+      setSavedBills(bills);
+      setIsLoading(false);
+    };
+    loadBills();
   }, []);
 
-  const confirmDeleteBill = () => {
+  const confirmDeleteBill = async () => {
     if (!deleteTarget) return;
-    localStorage.removeItem(`custom_patungan_${deleteTarget}_persons`);
-    localStorage.removeItem(`custom_patungan_${deleteTarget}_enableService`);
-    localStorage.removeItem(`custom_patungan_${deleteTarget}_enableTax`);
-    localStorage.removeItem(`custom_patungan_${deleteTarget}_customService`);
-    localStorage.removeItem(`custom_patungan_${deleteTarget}_customTax`);
 
-    const newList = savedBills.filter((b) => b.title !== deleteTarget);
-    setSavedBills(newList);
-    localStorage.setItem("custom_patungan_bill_list", JSON.stringify(newList));
-    toast.success(`"${deleteTarget}" berhasil dihapus`);
+    const success = await deleteCustomBillFromSupabase(deleteTarget);
+    if (success) {
+      const newList = savedBills.filter((b) => b.title !== deleteTarget);
+      setSavedBills(newList);
+      toast.success(`"${deleteTarget}" berhasil dihapus`);
+    } else {
+      toast.error(`Gagal menghapus "${deleteTarget}"`);
+    }
     setDeleteTarget(null);
   };
 
   const renameBill = (oldTitle: string) => {
-    const newTitle = editValue.trim();
-    if (!newTitle || newTitle === oldTitle) {
-      setEditingTitle(null);
-      return;
-    }
-    if (savedBills.some((b) => b.title === newTitle)) {
-      toast.error(`Judul "${newTitle}" sudah ada!`);
-      return;
-    }
-
-    // Migrate localStorage keys
-    const keys = ["_persons", "_enableService", "_enableTax", "_customService", "_customTax"];
-    keys.forEach((key) => {
-      const val = localStorage.getItem(`custom_patungan_${oldTitle}${key}`);
-      if (val !== null) {
-        localStorage.setItem(`custom_patungan_${newTitle}${key}`, val);
-        localStorage.removeItem(`custom_patungan_${oldTitle}${key}`);
-      }
-    });
-
-    // Update bill list
-    const newList = savedBills.map((b) => (b.title === oldTitle ? { ...b, title: newTitle } : b));
-    setSavedBills(newList);
-    localStorage.setItem("custom_patungan_bill_list", JSON.stringify(newList));
+    toast.info("Rename belum tersedia. Silakan hapus dan buat baru dengan judul yang diinginkan.");
     setEditingTitle(null);
-    toast.success(`Judul diubah menjadi "${newTitle}"`);
   };
 
-  const formatDate = (timestamp: number) => {
+  const formatDate = (timestamp: string) => {
     return new Intl.DateTimeFormat("id-ID", {
       day: "numeric",
       month: "short",
       year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(new Date(timestamp));
   };
 
@@ -132,7 +98,7 @@ const CustomSplitTitle = () => {
               </h3>
               <div className="grid gap-3">
                 {savedBills
-                  .sort((a, b) => b.createdAt - a.createdAt)
+                  .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                   .map((bill) => (
                     <div key={bill.title} className="group flex items-center justify-between rounded-xl border border-border bg-card p-4 transition-all hover:shadow-md hover:border-primary/30">
                       {editingTitle === bill.title ? (
@@ -156,19 +122,20 @@ const CustomSplitTitle = () => {
                         <>
                           <button onClick={() => navigate(`/custom-split?title=${encodeURIComponent(bill.title)}`)} className="flex-1 text-left">
                             <p className="font-semibold text-foreground">{bill.title}</p>
-                            <p className="text-xs text-muted-foreground">{formatDate(bill.createdAt)}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(bill.created_at)}</p>
                           </button>
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
-                              onClick={() => { setEditingTitle(bill.title); setEditValue(bill.title); }}
+                              onClick={() => {
+                                setEditingTitle(bill.title);
+                                setEditValue(bill.title);
+                              }}
                               className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                              disabled
                             >
                               <Pencil className="h-4 w-4" />
                             </button>
-                            <button
-                              onClick={() => setDeleteTarget(bill.title)}
-                              className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                            >
+                            <button onClick={() => setDeleteTarget(bill.title)} className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
                               <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
@@ -189,16 +156,11 @@ const CustomSplitTitle = () => {
               <Trash2 className="h-5 w-5 text-destructive" />
               Hapus Data?
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              Data untuk "{deleteTarget}" akan dihapus secara permanen. Tindakan ini tidak bisa dibatalkan.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Data untuk "{deleteTarget}" akan dihapus secara permanen. Tindakan ini tidak bisa dibatalkan.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-lg">Batal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeleteBill}
-              className="rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+            <AlertDialogAction onClick={confirmDeleteBill} className="rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Hapus
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -209,4 +171,3 @@ const CustomSplitTitle = () => {
 };
 
 export default CustomSplitTitle;
-

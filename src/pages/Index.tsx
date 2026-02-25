@@ -5,21 +5,12 @@ import { ArrowLeft, CheckCircle2, Share2, Copy, Receipt, Plus, Trash2, FileDown,
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { loadCustomBillFromSupabase, saveCustomBillToSupabase, deleteCustomBillFromSupabase } from "@/lib/supabase";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { exportElementToPDF } from "@/lib/pdf";
 import Footer from "@/components/Footer";
 
-let nextId = 1;
-const genId = () => String(nextId++);
+const genId = () => crypto.randomUUID();
 
 interface PersonItem {
   id: string;
@@ -67,71 +58,111 @@ const Index = () => {
   };
 
   const initialTitle = getTitleFromUrl();
-  const [persons, setPersons] = useState<PersonWithItems[]>(() => {
-    if (!initialTitle) return [];
-    const saved = localStorage.getItem(`custom_patungan_${initialTitle}_persons`);
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [persons, setPersons] = useState<PersonWithItems[]>([]);
   const [splitTitle, setSplitTitle] = useState(initialTitle);
-
-  const [enableService, setEnableService] = useState(() => {
-    if (!initialTitle) return true;
-    const saved = localStorage.getItem(`custom_patungan_${initialTitle}_enableService`);
-    return saved !== null ? JSON.parse(saved) : true;
-  });
-  const [enableTax, setEnableTax] = useState(() => {
-    if (!initialTitle) return true;
-    const saved = localStorage.getItem(`custom_patungan_${initialTitle}_enableTax`);
-    return saved !== null ? JSON.parse(saved) : true;
-  });
-  const [customService, setCustomService] = useState(() => {
-    if (!initialTitle) return "";
-    return localStorage.getItem(`custom_patungan_${initialTitle}_customService`) || "";
-  });
-  const [customTax, setCustomTax] = useState(() => {
-    if (!initialTitle) return "";
-    return localStorage.getItem(`custom_patungan_${initialTitle}_customTax`) || "";
-  });
+  const [enableService, setEnableService] = useState(true);
+  const [enableTax, setEnableTax] = useState(true);
+  const [customService, setCustomService] = useState("");
+  const [customTax, setCustomTax] = useState("");
   const pdfRef = useRef<HTMLDivElement>(null);
   const [collapsedResults, setCollapsedResults] = useState<string[]>([]);
 
-  // Persistence
+  // Load data from Supabase on mount
   useEffect(() => {
-    if (!splitTitle) return;
-    localStorage.setItem(`custom_patungan_${splitTitle}_persons`, JSON.stringify(persons));
-    localStorage.setItem(`custom_patungan_${splitTitle}_enableService`, JSON.stringify(enableService));
-    localStorage.setItem(`custom_patungan_${splitTitle}_enableTax`, JSON.stringify(enableTax));
-    localStorage.setItem(`custom_patungan_${splitTitle}_customService`, customService);
-    localStorage.setItem(`custom_patungan_${splitTitle}_customTax`, customTax);
-
-    // Update global bill list with timestamp
-    const savedList = localStorage.getItem("custom_patungan_bill_list");
-    let list: any[] = savedList ? JSON.parse(savedList) : [];
-
-    // Migration: convert string[] to object[] if needed
-    if (list.length > 0 && typeof list[0] === "string") {
-      list = list.map((title) => ({ title, createdAt: Date.now() }));
+    if (!initialTitle) {
+      console.log("No title in URL");
+      setIsLoading(false);
+      return;
     }
 
-    const billIndex = list.findIndex((b) => b.title === splitTitle);
-    if (billIndex === -1) {
-      localStorage.setItem("custom_patungan_bill_list", JSON.stringify([...list, { title: splitTitle, createdAt: Date.now() }]));
-    }
-  }, [persons, splitTitle, enableService, enableTax, customService, customTax]);
+    const loadData = async () => {
+      console.log("📥 Loading custom bill data for title:", initialTitle);
+      const result = await loadCustomBillFromSupabase(initialTitle);
+      if (result) {
+        const { people, items } = result;
+        console.log("📥 Data loaded successfully");
+        const personMapped = people.map((p) => ({
+          id: p.person_id,
+          name: p.person_name,
+          items: items
+            .filter((item) => item.assignedTo.includes(p.person_id))
+            .map((item) => ({
+              id: item.item_id,
+              name: item.item_name,
+              price: item.item_price,
+            })),
+        }));
+        setPersons(personMapped);
+        setEnableService(result.bill.enable_service);
+        setEnableTax(result.bill.enable_tax);
+        setCustomService(result.bill.custom_service || "");
+        setCustomTax(result.bill.custom_tax || "");
+      } else {
+        console.log("⚠️ No data found for this custom bill");
+      }
+      setIsLoading(false);
+    };
+
+    loadData();
+  }, [initialTitle]);
+
+  // Persistence to Supabase
+  useEffect(() => {
+    if (!splitTitle || isLoading) return;
+
+    const saveData = async () => {
+      const items: Array<{ id: string; name: string; price: number; assignedTo: string[] }> = [];
+      for (const person of persons) {
+        for (const item of person.items) {
+          const existingItem = items.find((i) => i.id === item.id);
+          if (existingItem) {
+            existingItem.assignedTo.push(person.id);
+          } else {
+            items.push({
+              id: item.id,
+              name: item.name,
+              price: item.price,
+              assignedTo: [person.id],
+            });
+          }
+        }
+      }
+
+      const success = await saveCustomBillToSupabase(
+        splitTitle,
+        persons.map((p) => ({ id: p.id, name: p.name })),
+        items,
+        enableService,
+        enableTax,
+        customService,
+        customTax,
+      );
+
+      if (!success) {
+        console.error("❌ Failed to save custom bill data!");
+        toast.error("Gagal menyimpan data");
+      }
+    };
+
+    // Debounce saving to avoid too many requests
+    const timeoutId = setTimeout(() => {
+      saveData();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [persons, splitTitle, enableService, enableTax, customService, customTax, isLoading]);
 
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
-  const resetData = () => {
+  const resetData = async () => {
     setPersons([]);
     setEnableService(true);
     setEnableTax(true);
     setCustomService("");
     setCustomTax("");
-    localStorage.removeItem(`custom_patungan_${splitTitle}_persons`);
-    localStorage.removeItem(`custom_patungan_${splitTitle}_enableService`);
-    localStorage.removeItem(`custom_patungan_${splitTitle}_enableTax`);
-    localStorage.removeItem(`custom_patungan_${splitTitle}_customService`);
-    localStorage.removeItem(`custom_patungan_${splitTitle}_customTax`);
+
+    await deleteCustomBillFromSupabase(splitTitle);
     toast.info("Data dibersihkan");
     setResetConfirmOpen(false);
   };
@@ -248,7 +279,13 @@ const Index = () => {
           <div className="space-y-4">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Item per Teman</h2>
             {persons.map((person) => (
-              <PersonItemCard key={person.id} person={person} onAddItem={(name, price) => addItemToPerson(person.id, name, price)} onRemoveItem={(itemId) => removeItemFromPerson(person.id, itemId)} onUpdateItem={(itemId, name, price) => updateItemInPerson(person.id, itemId, name, price)} />
+              <PersonItemCard
+                key={person.id}
+                person={person}
+                onAddItem={(name, price) => addItemToPerson(person.id, name, price)}
+                onRemoveItem={(itemId) => removeItemFromPerson(person.id, itemId)}
+                onUpdateItem={(itemId, name, price) => updateItemInPerson(person.id, itemId, name, price)}
+              />
             ))}
           </div>
         )}
@@ -298,9 +335,7 @@ const Index = () => {
               </button>
             </div>
           </div>
-          <p className="text-[10px] text-muted-foreground italic mt-1 font-medium">
-            * Pajak dan service, di bagi rata ke semua teman
-          </p>
+          <p className="text-[10px] text-muted-foreground italic mt-1 font-medium">* Pajak dan service, di bagi rata ke semua teman</p>
           <div className="border-t border-border pt-3 flex justify-between items-center">
             <span className="font-semibold text-foreground">Total</span>
             <span className="text-lg font-bold text-primary">{formatRupiah(totalBill)}</span>
@@ -341,24 +376,22 @@ const Index = () => {
               <div ref={pdfRef} className="grid gap-3 sm:grid-cols-2">
                 {summaries.map((s, i) => (
                   <motion.div key={s.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="rounded-xl border border-border bg-background p-4 space-y-2">
-                    <button
-                      onClick={() => setCollapsedResults(prev => prev.includes(s.id) ? prev.filter(id => id !== s.id) : [...prev, s.id])}
-                      className="flex w-full items-center justify-between text-left"
-                    >
+                    <button onClick={() => setCollapsedResults((prev) => (prev.includes(s.id) ? prev.filter((id) => id !== s.id) : [...prev, s.id]))} className="flex w-full items-center justify-between text-left">
                       <div className="flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                           <Receipt className="h-4 w-4" />
                         </div>
                         <div>
                           <span className="font-bold text-foreground">{s.name}</span>
-                          {collapsedResults.includes(s.id) && (
-                            <p className="text-xs text-primary font-semibold">{formatRupiah(s.total)}</p>
-                          )}
+                          {collapsedResults.includes(s.id) && <p className="text-xs text-primary font-semibold">{formatRupiah(s.total)}</p>}
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
                         <span
-                          onClick={(e) => { e.stopPropagation(); copyPerson(s); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copyPerson(s);
+                          }}
                           className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground transition-colors"
                         >
                           <Copy className="h-4 w-4" />
@@ -368,13 +401,7 @@ const Index = () => {
                     </button>
                     <AnimatePresence initial={false}>
                       {!collapsedResults.includes(s.id) && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2, ease: "easeInOut" }}
-                          className="overflow-hidden"
-                        >
+                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2, ease: "easeInOut" }} className="overflow-hidden">
                           {s.items.length > 0 ? (
                             <>
                               <div className="space-y-1">
@@ -430,9 +457,7 @@ const Index = () => {
               <Trash2 className="h-5 w-5 text-destructive" />
               Hapus Semua Data?
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              Semua data input untuk bill ini akan dihapus. Tindakan ini tidak bisa dibatalkan.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Semua data input untuk bill ini akan dihapus. Tindakan ini tidak bisa dibatalkan.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-lg">Batal</AlertDialogCancel>
@@ -447,7 +472,17 @@ const Index = () => {
 };
 
 // Sub-component for per-person item input
-function PersonItemCard({ person, onAddItem, onRemoveItem, onUpdateItem }: { person: PersonWithItems; onAddItem: (name: string, price: number) => void; onRemoveItem: (itemId: string) => void; onUpdateItem: (itemId: string, name: string, price: number) => void }) {
+function PersonItemCard({
+  person,
+  onAddItem,
+  onRemoveItem,
+  onUpdateItem,
+}: {
+  person: PersonWithItems;
+  onAddItem: (name: string, price: number) => void;
+  onRemoveItem: (itemId: string) => void;
+  onUpdateItem: (itemId: string, name: string, price: number) => void;
+}) {
   const [itemName, setItemName] = useState("");
   const [itemPrice, setItemPrice] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -483,26 +518,14 @@ function PersonItemCard({ person, onAddItem, onRemoveItem, onUpdateItem }: { per
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       {/* Collapsible Header */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/30 transition-colors"
-      >
+      <button onClick={() => setCollapsed(!collapsed)} className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/30 transition-colors">
         <div className="flex items-center gap-2">
           <h3 className="font-semibold text-foreground">{person.name}</h3>
-          {person.items.length > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/10 px-1.5 text-[10px] font-bold text-primary">
-              {person.items.length}
-            </span>
-          )}
+          {person.items.length > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/10 px-1.5 text-[10px] font-bold text-primary">{person.items.length}</span>}
         </div>
         <div className="flex items-center gap-2">
-          {person.items.length > 0 && (
-            <span className="text-xs font-medium text-primary">{formatRupiah(itemTotal)}</span>
-          )}
-          <motion.div
-            animate={{ rotate: collapsed ? -90 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
+          {person.items.length > 0 && <span className="text-xs font-medium text-primary">{formatRupiah(itemTotal)}</span>}
+          <motion.div animate={{ rotate: collapsed ? -90 : 0 }} transition={{ duration: 0.2 }}>
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </motion.div>
         </div>
@@ -511,16 +534,16 @@ function PersonItemCard({ person, onAddItem, onRemoveItem, onUpdateItem }: { per
       {/* Collapsible Body */}
       <AnimatePresence initial={false}>
         {!collapsed && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: "easeInOut" }} className="overflow-hidden">
             <div className="px-4 pt-1 pb-4 space-y-3">
               <div className="flex flex-wrap gap-2">
-                <input type="text" placeholder="Nama item..." value={itemName} onChange={(e) => setItemName(e.target.value)} className="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-ring focus:ring-2" />
+                <input
+                  type="text"
+                  placeholder="Nama item..."
+                  value={itemName}
+                  onChange={(e) => setItemName(e.target.value)}
+                  className="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-ring focus:ring-2"
+                />
                 <input
                   type="number"
                   placeholder="Harga"
@@ -538,8 +561,20 @@ function PersonItemCard({ person, onAddItem, onRemoveItem, onUpdateItem }: { per
                   <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
                     {editingId === item.id ? (
                       <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
-                        <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="min-w-0 flex-1 basis-[60%] rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary" autoFocus />
-                        <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleUpdate()} className="min-w-0 w-20 flex-shrink-0 rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary" />
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="min-w-0 flex-1 basis-[60%] rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary"
+                          autoFocus
+                        />
+                        <input
+                          type="number"
+                          value={editPrice}
+                          onChange={(e) => setEditPrice(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && handleUpdate()}
+                          className="min-w-0 w-20 flex-shrink-0 rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary"
+                        />
                         <div className="flex gap-1">
                           <button onClick={handleUpdate} className="text-primary hover:text-primary/80 transition-colors">
                             <Check className="h-4 w-4" />

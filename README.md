@@ -1,19 +1,20 @@
 # 💰 Patungan
 
-**Bagi tagihan dengan mudah • Pajak & Service otomatis • AI Assistant**
+**Bagi tagihan dengan mudah • Data tersimpan di cloud • AI Assistant**
 
-Aplikasi web untuk membagi tagihan dengan teman-teman secara mudah dan akurat. Mendukung perhitungan pajak, service charge, pembagian custom per item, dan asisten AI terintegrasi.
+Aplikasi web untuk membagi tagihan dengan teman-teman secara mudah dan akurat. Mendukung perhitungan pajak, service charge, pembagian custom per item, user session berbasis email, dan asisten AI terintegrasi.
 
 ---
 
 ## ✨ Fitur Utama
 
+- 👤 **User Session** - Masukkan nama & email sekali, data tersimpan di cloud dan sync antar device
 - 🧮 **Split Bill Otomatis** - Bagi tagihan secara merata dengan perhitungan pajak & service otomatis
 - 🎯 **Custom Split Bill** - Tentukan siapa yang bayar item apa (Ekspor PDF & Share WA)
-- 📝 **Catatan (Notes)** - Catat daftar belanja atau rencana trip dengan fitur reorder & filter
-- 🤖 **Patungan AI** - Asisten cerdas bertenaga Gemini 2.5 Flash Lite untuk tips trip & keuangan
+- 📝 **Catatan (Notes)** - Catat daftar belanja atau rencana trip dengan fitur reorder — tersimpan di Supabase
+- 🤖 **Patungan AI** - Asisten cerdas bertenaga Gemini 2.5 Flash Lite, riwayat chat tersimpan di cloud
 - 📊 **Ringkasan Detail** - Lihat breakdown pembayaran per orang secara transparan
-- 📱 **Mobile Responsive** - Tampilan optimal di semua perangkat (Full-screen Chat on Mobile)
+- 📱 **Mobile Responsive** - Tampilan optimal di semua perangkat
 - 📤 **Share ke WhatsApp** - Bagikan hasil perhitungan langsung ke WhatsApp
 - 📋 **Copy to Clipboard** - Salin ringkasan pembayaran dengan satu klik
 
@@ -25,6 +26,7 @@ Aplikasi web untuk membagi tagihan dengan teman-teman secara mudah dan akurat. M
 
 - Node.js (v18 atau lebih tinggi)
 - npm atau bun
+- Akun [Supabase](https://supabase.com)
 
 ### Installation
 
@@ -37,28 +39,64 @@ cd patungan
 
 # Install dependencies
 npm install
-# atau
-bun install
 
 # Konfigurasi Environment Variables
-cp .env.example .env # Jika ada, atau buat file .env baru
+cp .env.example .env
 ```
 
-Tambahkan API Key Anda di file `.env`:
+Tambahkan variabel berikut di file `.env`:
 ```env
+VITE_SUPABASE_URL=https://xxxx.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key_here
 VITE_GEMINI_API_KEY=AIzaSy...
+```
+
+### Setup Database (Supabase)
+
+Jalankan SQL berikut di **Supabase Dashboard → SQL Editor** (lihat `SUPABASE_SETUP.md` untuk skema lengkap):
+
+```sql
+-- Tabel existing (Split Bill)
+CREATE TABLE bills ( ... );
+CREATE TABLE bill_people ( ... );
+CREATE TABLE custom_bills ( ... );
+-- ... (lihat SUPABASE_SETUP.md)
+
+-- Tabel baru
+CREATE TABLE notes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  note_id VARCHAR(255) NOT NULL UNIQUE,
+  title VARCHAR(500) NOT NULL,
+  content TEXT DEFAULT '',
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) NOT NULL UNIQUE,
+  username VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE chat_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_email VARCHAR(255) NOT NULL,
+  role VARCHAR(10) NOT NULL CHECK (role IN ('user', 'model')),
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
 ```
 
 ### Running Locally
 
 ```bash
-# Jalankan development server
 npm run dev
-# atau
-bun dev
 ```
 
-Aplikasi akan berjalan di `http://localhost:8080` (Default Port)
+Aplikasi akan berjalan di `http://localhost:8080`
 
 ---
 
@@ -72,6 +110,7 @@ Aplikasi akan berjalan di `http://localhost:8080` (Default Port)
 | **Tailwind CSS** | Styling |
 | **shadcn/ui** | UI Components |
 | **Framer Motion** | Animations & Transitions |
+| **Supabase** | Database & Cloud Storage |
 | **Gemini AI** | AI Engine (Gemini 2.5 Flash Lite) |
 | **Next-Themes** | Dark Mode Support |
 | **Lucide React** | Icons |
@@ -82,16 +121,10 @@ Aplikasi akan berjalan di `http://localhost:8080` (Default Port)
 ## 📦 Available Scripts
 
 ```bash
-# Development
 npm run dev          # Start dev server
 npm run build        # Build for production
-npm run build:dev    # Build in development mode
 npm run preview      # Preview production build
-
-# Code Quality
 npm run lint         # Run ESLint
-npm run test         # Run tests
-npm run test:watch   # Run tests in watch mode
 ```
 
 ---
@@ -101,13 +134,13 @@ npm run test:watch   # Run tests in watch mode
 ```
 patungan/
 ├── src/
-│   ├── components/     # Reusable UI components
-│   ├── pages/          # Page components
-│   ├── hooks/          # Custom React hooks
-│   ├── lib/            # Utility functions
+│   ├── components/     # Reusable UI components (ChatAI, UserSetupDialog, ...)
+│   ├── pages/          # Page components (Home, SplitBill, Notes, ...)
+│   ├── lib/            # Utility functions (supabase.ts, userStore.ts, ...)
 │   ├── App.tsx         # Main app component
 │   └── main.tsx        # Entry point
 ├── public/             # Static assets
+├── SUPABASE_SETUP.md   # Panduan setup database Supabase
 └── dist/               # Build output
 ```
 
@@ -115,42 +148,46 @@ patungan/
 
 ## 🎨 Features in Detail
 
+### 👤 User Session
+- Popup muncul saat pertama kali buka aplikasi
+- Input nama & email → disimpan ke Supabase `users` table
+- Sesi di-cache di localStorage agar tidak perlu login ulang
+- Klik ikon inisial (pojok kanan atas) untuk lihat profil atau keluar sesi
+
 ### 🧮 Split Bill
-Bagi tagihan secara merata dengan fitur:
-- Input jumlah teman
-- Tambah item dengan nama dan harga
+Bagi tagihan secara merata:
+- Input jumlah teman, total tagihan
 - Perhitungan otomatis pajak & service
-- Ringkasan per orang
+- Ringkasan per orang, share ke WhatsApp
 
 ### 🎯 Custom Split Bill
 Kontrol penuh siapa bayar apa:
 - Assign item ke orang tertentu
 - Satu item bisa dibagi beberapa orang
-- Item bersama untuk semua
-- Perhitungan proporsional
+- Perhitungan proporsional + ekspor PDF
 
 ### 📝 Catatan (Notes)
 - Simpan daftar belanja atau detail trip
-- Fitur drag-and-drop style reordering (Up/Down)
-- Konfirmasi hapus yang aman
-- Tersimpan otomatis di LocalStorage
+- Reorder dengan tombol ↑↓
+- Data tersimpan di Supabase (sync antar device)
 
 ### 🤖 Patungan AI
 - Asisten bertenaga Gemini 2.5 Flash Lite
-- Paham konteks aplikasi (Split Bill, Notes, dll)
+- Riwayat chat tersimpan di Supabase per user email
 - Responsive UI (Floating di Desktop, Full-screen di Mobile)
-- Mode Maximize/Minimize untuk kenyamanan di HP
 
 ---
 
 ## 🌐 Deployment
 
 ### Vercel (Recommended)
-Project ini sudah dikonfigurasi untuk deploy di Vercel dengan `vercel.json` untuk mendukung SPA routing.
 
-1. Hubungkan repository ke Vercel.
-2. Tambahkan Environment Variable: `VITE_GEMINI_API_KEY`.
-3. Klik **Deploy**.
+1. Hubungkan repository ke Vercel
+2. Tambahkan Environment Variables:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - `VITE_GEMINI_API_KEY`
+3. Klik **Deploy**
 
 ### Manual Build
 ```bash
@@ -174,10 +211,4 @@ This project is open source and available under the MIT License.
 
 ## 👨‍💻 Author
 
-Built with ❤️ using [Nexteam](https://www.nofileexistshere.my.id/)
-
----
-
-## 📞 Support
-
-Jika ada pertanyaan atau masalah, silakan buat issue di repository ini.
+Built with ❤️ by [Nexteam](https://www.nofileexistshere.my.id/)

@@ -2,16 +2,8 @@ import { useState, useMemo, useEffect } from "react";
 import { Person, formatRupiah, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/bill";
 import { PeopleSection } from "@/components/PeopleSection";
 import { ArrowLeft, CheckCircle2, Share2, Copy, Trash2, MessageCircle } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { loadBillFromSupabase, saveBillToSupabase, deleteBillFromSupabase } from "@/lib/supabase";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -54,63 +46,69 @@ const SplitBill = () => {
   };
 
   const initialTitle = getTitleFromUrl();
-  const [billName, setBillName] = useState(() => {
-    if (!initialTitle) return "";
-    return localStorage.getItem(`patungan_${initialTitle}_billName`) || initialTitle;
-  });
-  const [totalBill, setTotalBill] = useState(() => {
-    if (!initialTitle) return "";
-    return localStorage.getItem(`patungan_${initialTitle}_totalBill`) || "";
-  });
-  const [persons, setPersons] = useState<Person[]>(() => {
-    if (!initialTitle) return [];
-    const saved = localStorage.getItem(`patungan_${initialTitle}_persons`);
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [enableService, setEnableService] = useState(() => {
-    if (!initialTitle) return true;
-    const saved = localStorage.getItem(`patungan_${initialTitle}_enableService`);
-    return saved !== null ? JSON.parse(saved) : true;
-  });
-  const [enableTax, setEnableTax] = useState(() => {
-    if (!initialTitle) return true;
-    const saved = localStorage.getItem(`patungan_${initialTitle}_enableTax`);
-    return saved !== null ? JSON.parse(saved) : true;
-  });
-  const [customService, setCustomService] = useState(() => {
-    if (!initialTitle) return "";
-    return localStorage.getItem(`patungan_${initialTitle}_customService`) || "";
-  });
-  const [customTax, setCustomTax] = useState(() => {
-    if (!initialTitle) return "";
-    return localStorage.getItem(`patungan_${initialTitle}_customTax`) || "";
-  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [billName, setBillName] = useState("");
+  const [totalBill, setTotalBill] = useState("");
+  const [persons, setPersons] = useState<Person[]>([]);
+  const [enableService, setEnableService] = useState(true);
+  const [enableTax, setEnableTax] = useState(true);
+  const [customService, setCustomService] = useState("");
+  const [customTax, setCustomTax] = useState("");
 
-  // Persistence
+  // Load data from Supabase on mount
   useEffect(() => {
-    if (!initialTitle) return;
-    localStorage.setItem(`patungan_${initialTitle}_billName`, billName);
-    localStorage.setItem(`patungan_${initialTitle}_totalBill`, totalBill);
-    localStorage.setItem(`patungan_${initialTitle}_persons`, JSON.stringify(persons));
-    localStorage.setItem(`patungan_${initialTitle}_enableService`, JSON.stringify(enableService));
-    localStorage.setItem(`patungan_${initialTitle}_enableTax`, JSON.stringify(enableTax));
-    localStorage.setItem(`patungan_${initialTitle}_customService`, customService);
-    localStorage.setItem(`patungan_${initialTitle}_customTax`, customTax);
-
-    // Update global bill list with timestamp
-    const savedList = localStorage.getItem("patungan_bill_list");
-    let list: any[] = savedList ? JSON.parse(savedList) : [];
-
-    // Migration: convert string[] to object[] if needed
-    if (list.length > 0 && typeof list[0] === "string") {
-      list = list.map((title) => ({ title, createdAt: Date.now() }));
+    if (!initialTitle) {
+      console.log("No title in URL");
+      setIsLoading(false);
+      return;
     }
 
-    const billIndex = list.findIndex((b) => b.title === initialTitle);
-    if (billIndex === -1) {
-      localStorage.setItem("patungan_bill_list", JSON.stringify([...list, { title: initialTitle, createdAt: Date.now() }]));
-    }
-  }, [billName, totalBill, persons, enableService, enableTax, customService, customTax, initialTitle]);
+    const loadData = async () => {
+      console.log("📥 Loading bill data for title:", initialTitle);
+      const result = await loadBillFromSupabase(initialTitle);
+      if (result) {
+        const { bill, people } = result;
+        console.log("📥 Data loaded successfully");
+        setBillName(bill.bill_name || initialTitle);
+        setTotalBill(bill.total_bill?.toString() || "");
+        setPersons(
+          people.map((p) => ({
+            id: p.person_id,
+            name: p.person_name,
+          })),
+        );
+        setEnableService(bill.enable_service);
+        setEnableTax(bill.enable_tax);
+        setCustomService(bill.custom_service || "");
+        setCustomTax(bill.custom_tax || "");
+      } else {
+        console.log("⚠️ No data found for this bill");
+      }
+      setIsLoading(false);
+    };
+
+    loadData();
+  }, [initialTitle]);
+
+  // Persistence to Supabase
+  useEffect(() => {
+    if (!initialTitle || isLoading) return;
+
+    const saveData = async () => {
+      const success = await saveBillToSupabase(initialTitle, billName, totalBill, persons, enableService, enableTax, customService, customTax);
+      if (!success) {
+        console.error("❌ Failed to save bill data!");
+        toast.error("Gagal menyimpan data");
+      }
+    };
+
+    // Debounce saving to avoid too many requests
+    const timeoutId = setTimeout(() => {
+      saveData();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [billName, totalBill, persons, enableService, enableTax, customService, customTax, initialTitle, isLoading]);
 
   const addPerson = (name: string) => {
     setPersons((prev) => [...prev, { id: genId(), name }]);
@@ -122,7 +120,7 @@ const SplitBill = () => {
 
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
-  const resetData = () => {
+  const resetData = async () => {
     setBillName(initialTitle);
     setTotalBill("");
     setPersons([]);
@@ -130,13 +128,8 @@ const SplitBill = () => {
     setEnableTax(true);
     setCustomService("");
     setCustomTax("");
-    localStorage.removeItem(`patungan_${initialTitle}_billName`);
-    localStorage.removeItem(`patungan_${initialTitle}_totalBill`);
-    localStorage.removeItem(`patungan_${initialTitle}_persons`);
-    localStorage.removeItem(`patungan_${initialTitle}_enableService`);
-    localStorage.removeItem(`patungan_${initialTitle}_enableTax`);
-    localStorage.removeItem(`patungan_${initialTitle}_customService`);
-    localStorage.removeItem(`patungan_${initialTitle}_customTax`);
+
+    await deleteBillFromSupabase(initialTitle);
     toast.info("Data dibersihkan");
     setResetConfirmOpen(false);
   };
@@ -274,9 +267,7 @@ const SplitBill = () => {
               </button>
             </div>
           </div>
-          <p className="text-[10px] text-muted-foreground italic mt-1 font-medium">
-            * Pajak dan service, di bagi rata ke semua teman
-          </p>
+          <p className="text-[10px] text-muted-foreground italic mt-1 font-medium">* Pajak dan service, di bagi rata ke semua teman</p>
           <div className="border-t border-border pt-3 flex justify-between items-center">
             <span className="font-semibold text-foreground">Total</span>
             <span className="text-lg font-bold text-primary">{formatRupiah(calculation.total)}</span>
@@ -338,9 +329,7 @@ const SplitBill = () => {
               <Trash2 className="h-5 w-5 text-destructive" />
               Hapus Semua Data?
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              Semua data input untuk bill ini akan dihapus. Tindakan ini tidak bisa dibatalkan.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Semua data input untuk bill ini akan dihapus. Tindakan ini tidak bisa dibatalkan.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-lg">Batal</AlertDialogCancel>

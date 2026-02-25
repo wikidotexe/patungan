@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, StickyNote, Pencil, Check, X, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, StickyNote, Pencil, Check, X, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -14,28 +14,30 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import Footer from "@/components/Footer";
+import {
+    loadNotesFromSupabase,
+    saveNoteToSupabase,
+    deleteNoteFromSupabase,
+    updateNotesOrderInSupabase,
+} from "@/lib/supabase";
 
 interface Note {
-    id: string;
+    id: string;       // note_id (UUID string)
     title: string;
     content: string;
     createdAt: number;
     updatedAt: number;
+    sortOrder: number;
 }
 
-const STORAGE_KEY = "patungan_notes";
-
-let nextId = 1;
-const genId = () => `note_${Date.now()}_${nextId++}`;
+const genId = () => crypto.randomUUID();
 
 const formatDate = (ts: number) =>
     new Date(ts).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 const Notes = () => {
-    const [notes, setNotes] = useState<Note[]>(() => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        return saved ? JSON.parse(saved) : [];
-    });
+    const [notes, setNotes] = useState<Note[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     const [newTitle, setNewTitle] = useState("");
     const [newContent, setNewContent] = useState("");
@@ -45,33 +47,57 @@ const Notes = () => {
     const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
     const [isAdding, setIsAdding] = useState(false);
 
-    // Persist to localStorage
+    // Load notes from Supabase on mount
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
-    }, [notes]);
+        const load = async () => {
+            const rows = await loadNotesFromSupabase();
+            const mapped: Note[] = rows.map((r) => ({
+                id: r.note_id,
+                title: r.title,
+                content: r.content,
+                createdAt: new Date(r.created_at).getTime(),
+                updatedAt: new Date(r.updated_at).getTime(),
+                sortOrder: r.sort_order,
+            }));
+            setNotes(mapped);
+            setIsLoading(false);
+        };
+        load();
+    }, []);
 
-    const addNote = () => {
+    const addNote = async () => {
         const title = newTitle.trim();
         const content = newContent.trim();
         if (!title && !content) {
             toast.error("Isi judul atau catatan terlebih dahulu!");
             return;
         }
+        const now = Date.now();
         const note: Note = {
             id: genId(),
             title: title || "Tanpa Judul",
             content,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
+            createdAt: now,
+            updatedAt: now,
+            sortOrder: 0,
         };
-        setNotes((prev) => [note, ...prev]);
+
+        // Shift existing notes down
+        const updatedNotes = [note, ...notes.map((n, i) => ({ ...n, sortOrder: i + 1 }))];
+        setNotes(updatedNotes);
         setNewTitle("");
         setNewContent("");
         setIsAdding(false);
         toast.success("Catatan ditambahkan!");
+
+        // Save to Supabase (new note + update sort orders)
+        await saveNoteToSupabase({ note_id: note.id, title: note.title, content: note.content, sort_order: 0 });
+        await updateNotesOrderInSupabase(
+            updatedNotes.slice(1).map((n) => ({ note_id: n.id, sort_order: n.sortOrder }))
+        );
     };
 
-    const saveEdit = () => {
+    const saveEdit = async () => {
         if (!editingId) return;
         const title = editTitle.trim();
         const content = editContent.trim();
@@ -79,22 +105,35 @@ const Notes = () => {
             toast.error("Catatan tidak boleh kosong!");
             return;
         }
+        const now = Date.now();
+        const updatedNote = notes.find((n) => n.id === editingId);
+        if (!updatedNote) return;
+
         setNotes((prev) =>
             prev.map((n) =>
                 n.id === editingId
-                    ? { ...n, title: title || "Tanpa Judul", content, updatedAt: Date.now() }
+                    ? { ...n, title: title || "Tanpa Judul", content, updatedAt: now }
                     : n
             )
         );
         setEditingId(null);
         toast.success("Catatan diperbarui!");
+
+        await saveNoteToSupabase({
+            note_id: editingId,
+            title: title || "Tanpa Judul",
+            content,
+            sort_order: updatedNote.sortOrder,
+        });
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (!deleteTarget) return;
         setNotes((prev) => prev.filter((n) => n.id !== deleteTarget));
         setDeleteTarget(null);
         toast.success("Catatan dihapus!");
+
+        await deleteNoteFromSupabase(deleteTarget);
     };
 
     const startEdit = (note: Note) => {
@@ -103,14 +142,16 @@ const Notes = () => {
         setEditContent(note.content);
     };
 
-    const moveNote = (index: number, direction: "up" | "down") => {
+    const moveNote = async (index: number, direction: "up" | "down") => {
         const target = direction === "up" ? index - 1 : index + 1;
         if (target < 0 || target >= notes.length) return;
-        setNotes((prev) => {
-            const arr = [...prev];
-            [arr[index], arr[target]] = [arr[target], arr[index]];
-            return arr;
-        });
+
+        const reordered = [...notes];
+        [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+        const withOrder = reordered.map((n, i) => ({ ...n, sortOrder: i }));
+        setNotes(withOrder);
+
+        await updateNotesOrderInSupabase(withOrder.map((n) => ({ note_id: n.id, sort_order: n.sortOrder })));
     };
 
     return (
@@ -168,8 +209,13 @@ const Notes = () => {
                     )}
                 </AnimatePresence>
 
-                {/* Notes List */}
-                {notes.length === 0 && !isAdding ? (
+                {/* Loading State */}
+                {isLoading ? (
+                    <div className="flex flex-col items-center justify-center py-16 gap-3">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">Memuat catatan...</p>
+                    </div>
+                ) : notes.length === 0 && !isAdding ? (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16 space-y-3">
                         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
                             <StickyNote className="h-8 w-8 text-muted-foreground" />
