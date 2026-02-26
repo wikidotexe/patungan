@@ -5,7 +5,7 @@ import { ArrowLeft, CheckCircle2, Share2, Copy, Receipt, Plus, Trash2, FileDown,
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { loadCustomBillFromSupabase, saveCustomBillToSupabase, deleteCustomBillFromSupabase } from "@/lib/supabase";
+import { loadCustomBillFromSupabase, saveCustomBillToSupabase, deleteCustomBillFromSupabase, getAllBillsFromSupabase, type Bill } from "@/lib/supabase";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { exportElementToPDF, type ReceiptPerson } from "@/lib/pdf";
 import Footer from "@/components/Footer";
@@ -71,6 +71,11 @@ const Index = () => {
   const [customTax, setCustomTax] = useState("");
   const pdfRef = useRef<HTMLDivElement>(null);
   const [collapsedResults, setCollapsedResults] = useState<string[]>([]);
+
+  // Import sharing state
+  const [importModal, setImportModal] = useState(false);
+  const [importBills, setImportBills] = useState<Bill[]>([]);
+  const [importLoading, setImportLoading] = useState(false);
 
   // Load data from Supabase on mount
   useEffect(() => {
@@ -195,6 +200,41 @@ const Index = () => {
     setPersons((prev) => prev.map((p) => (p.id === personId ? { ...p, items: p.items.map((i) => (i.id === itemId ? { ...i, name, price } : i)) } : p)));
   };
 
+  // Open import modal and fetch available split bills with items
+  const openImportModal = async () => {
+    setImportModal(true);
+    setImportLoading(true);
+    const bills = await getAllBillsFromSupabase(userEmail);
+    // Only show bills that have items
+    const withItems = bills.filter((b) => {
+      try { return JSON.parse(b.items_json || "[]").length > 0; } catch { return false; }
+    });
+    setImportBills(withItems);
+    setImportLoading(false);
+  };
+
+  // Import a split bill: divide its total equally among all persons
+  const importSharing = (bill: Bill) => {
+    const items: Array<{ name: string; price: number }> = (() => {
+      try { return JSON.parse(bill.items_json || "[]"); } catch { return []; }
+    })();
+    const itemsTotal = items.reduce((s: number, i: any) => s + (i.price || 0), 0);
+    if (!itemsTotal || persons.length === 0) {
+      toast.error("Tidak ada data yang bisa diimport.");
+      return;
+    }
+    const perPerson = Math.round(itemsTotal / persons.length);
+    const label = `Sharing: ${bill.bill_name || bill.title}`;
+    setPersons((prev) =>
+      prev.map((p) => ({
+        ...p,
+        items: [...p.items, { id: genId(), name: label, price: perPerson }],
+      }))
+    );
+    setImportModal(false);
+    toast.success(`Import sharing berhasil! ${formatRupiah(perPerson)}/orang`);
+  };
+
   const summaries = useMemo(() => {
     const totalSubtotal = persons.reduce((sum, p) => sum + p.items.reduce((isum, i) => isum + i.price, 0), 0);
 
@@ -287,7 +327,16 @@ const Index = () => {
         {/* Per-person items */}
         {persons.length > 0 && (
           <div className="space-y-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Item per Teman</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Item per Teman</h2>
+              <button
+                onClick={openImportModal}
+                className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 rounded-lg px-3 py-1.5 transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Import Sharing
+              </button>
+            </div>
             {persons.map((person) => (
               <PersonItemCard
                 key={person.id}
@@ -472,6 +521,77 @@ const Index = () => {
         )}
       </div>
       <Footer />
+
+      {/* Import Sharing Modal */}
+      <AnimatePresence>
+        {importModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 pb-4 sm:pb-0"
+            onClick={() => setImportModal(false)}
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="w-full max-w-sm rounded-2xl border border-border bg-card shadow-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+                <div>
+                  <h3 className="font-bold text-foreground">Import Sharing</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Pilih Split Bill untuk dibagi rata ke semua teman</p>
+                </div>
+                <button onClick={() => setImportModal(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Bill list */}
+              <div className="max-h-80 overflow-y-auto p-3 space-y-2">
+                {importLoading ? (
+                  <p className="text-center text-sm text-muted-foreground py-6">Memuat daftar bill...</p>
+                ) : importBills.length === 0 ? (
+                  <div className="text-center py-8 space-y-1">
+                    <p className="text-sm font-medium text-foreground">Belum ada Split Bill dengan item</p>
+                    <p className="text-xs text-muted-foreground">Buat Split Bill dulu dan tambahkan item di sana</p>
+                  </div>
+                ) : (
+                  importBills.map((bill) => {
+                    const items: Array<{ name: string; price: number }> = (() => {
+                      try { return JSON.parse(bill.items_json || "[]"); } catch { return []; }
+                    })();
+                    const total = items.reduce((s, i) => s + (i.price || 0), 0);
+                    const perPerson = persons.length > 0 ? Math.round(total / persons.length) : 0;
+                    return (
+                      <button
+                        key={bill.id}
+                        onClick={() => importSharing(bill)}
+                        className="w-full text-left rounded-xl border border-border bg-background hover:border-primary/50 hover:bg-primary/5 px-4 py-3 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold text-foreground text-sm">{bill.bill_name || bill.title}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{items.length} item · Total {formatRupiah(total)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground">per orang</p>
+                            <p className="font-bold text-primary text-sm">{formatRupiah(perPerson)}</p>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AlertDialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
         <AlertDialogContent className="max-w-sm w-[calc(100%-2rem)] rounded-xl">
