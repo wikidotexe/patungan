@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { loadCustomBillFromSupabase, saveCustomBillToSupabase, deleteCustomBillFromSupabase } from "@/lib/supabase";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { exportElementToPDF } from "@/lib/pdf";
+import { exportElementToPDF, type ReceiptPerson } from "@/lib/pdf";
 import Footer from "@/components/Footer";
 import { getStoredUser } from "@/lib/userStore";
 import { localDraft } from "@/lib/localDraft";
@@ -374,7 +374,20 @@ const Index = () => {
                   )}
                   <button
                     onClick={() => {
-                      if (pdfRef.current) exportElementToPDF(pdfRef.current, `patungan-receipt.pdf`, splitTitle || "Custom Split Bill");
+                      const receiptPersons: ReceiptPerson[] = summaries.map((s) => ({
+                        name: s.name,
+                        items: s.items,
+                        subtotal: s.subtotal,
+                        serviceCharge: s.serviceCharge,
+                        tax: s.tax,
+                        total: s.total,
+                      }));
+                      exportElementToPDF(
+                        pdfRef.current!,
+                        `patungan-${splitTitle || "receipt"}.pdf`,
+                        splitTitle || "Custom Split Bill",
+                        receiptPersons
+                      );
                     }}
                     className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
