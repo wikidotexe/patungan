@@ -99,6 +99,24 @@ const Index = () => {
               price: item.item_price,
             })),
         }));
+
+        // Safety: if Supabase returned people with 0 items but localStorage has richer data,
+        // prefer localStorage (handles case where load happened after an interrupted save)
+        const totalSupabaseItems = personMapped.reduce((s, p) => s + p.items.length, 0);
+        if (totalSupabaseItems === 0 && personMapped.length > 0) {
+          const draft = localDraft.get<{ persons: PersonWithItems[] }>(draftKey);
+          const totalDraftItems = draft?.persons?.reduce((s, p) => s + p.items.length, 0) ?? 0;
+          if (totalDraftItems > 0) {
+            setPersons(draft!.persons);
+            setEnableService(result.bill.enable_service);
+            setEnableTax(result.bill.enable_tax);
+            setCustomService(result.bill.custom_service || "");
+            setCustomTax(result.bill.custom_tax || "");
+            setIsLoading(false);
+            return; // Use draft data; save effect will re-sync to Supabase
+          }
+        }
+
         setPersons(personMapped);
         setEnableService(result.bill.enable_service);
         setEnableTax(result.bill.enable_tax);

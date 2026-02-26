@@ -314,80 +314,64 @@ export async function saveCustomBillToSupabase(
       billError = insertError;
     }
 
-    // Delete old people first, then insert fresh
-    const { error: deletePeopleError } = await supabase.from("custom_bill_people").delete().eq("custom_bill_id", bill.id);
-    if (deletePeopleError) {
-      console.warn("⚠️ Warning deleting old people:", deletePeopleError);
+    if (!bill) { console.error("❌ Failed to upsert custom bill"); return false; }
+
+    // ─ 2. Diff-based people sync — NEVER delete all ─────────────────────────
+    const { data: existingPeople } = await supabase
+      .from("custom_bill_people").select("person_id").eq("custom_bill_id", bill.id);
+
+    const existingPersonIds = new Set(existingPeople?.map((p) => p.person_id) ?? []);
+    const newPersonIds = new Set(persons.map((p) => p.id));
+
+    const removedPersonIds = [...existingPersonIds].filter((id) => !newPersonIds.has(id));
+    if (removedPersonIds.length > 0)
+      await supabase.from("custom_bill_people").delete().eq("custom_bill_id", bill.id).in("person_id", removedPersonIds);
+
+    const addedPeople = persons.filter((p) => !existingPersonIds.has(p.id));
+    if (addedPeople.length > 0)
+      await supabase.from("custom_bill_people").insert(addedPeople.map((p) => ({ custom_bill_id: bill.id, person_id: p.id, person_name: p.name })));
+
+    // ─ 3. Diff-based items sync — NEVER wipe all items ─────────────────────
+    const { data: existingItems } = await supabase
+      .from("custom_bill_items").select("id, item_id").eq("custom_bill_id", bill.id);
+
+    // Map our app UUID (item_id col) → DB primary key (id col)
+    const existingItemMap = new Map<string, string>(
+      existingItems?.map((i) => [i.item_id as string, i.id as string]) ?? []
+    );
+    const newItemIds = new Set(items.map((i) => i.id));
+
+    // Only delete DB rows for items that were REMOVED from state
+    const removedDbPks = existingItems?.filter((i) => !newItemIds.has(i.item_id)).map((i) => i.id) ?? [];
+    if (removedDbPks.length > 0) {
+      await supabase.from("custom_bill_item_assignments").delete().in("item_id", removedDbPks);
+      await supabase.from("custom_bill_items").delete().in("id", removedDbPks);
     }
 
-    // Insert new people
-    if (persons.length > 0) {
-      const { error: peopleError } = await supabase.from("custom_bill_people").insert(
-        persons.map((p) => ({
-          custom_bill_id: bill.id,
-          person_id: p.id,
-          person_name: p.name,
-        })),
-      );
+    // Insert new items, or update existing ones
+    for (const item of items) {
+      let dbPk = existingItemMap.get(item.id);
 
-      if (peopleError) {
-        console.error("❌ Error saving people:", peopleError);
-        return false;
-      }
-    }
-
-    // Delete old items and their assignments
-    // Must delete assignments FIRST to avoid FK constraint violation
-    const { data: oldItems } = await supabase
-      .from("custom_bill_items")
-      .select("id")
-      .eq("custom_bill_id", bill.id);
-
-    if (oldItems && oldItems.length > 0) {
-      await supabase
-        .from("custom_bill_item_assignments")
-        .delete()
-        .in("item_id", oldItems.map((i) => i.id));
-    }
-
-    const { error: deleteItemsError } = await supabase.from("custom_bill_items").delete().eq("custom_bill_id", bill.id);
-    if (deleteItemsError) {
-      console.error("❌ Error deleting old items:", deleteItemsError);
-      return false;
-    }
-
-    // Insert new items and assignments
-    if (items.length > 0) {
-      for (const item of items) {
-        const { data: insertedItem, error: itemError } = await supabase
+      if (!dbPk) {
+        // Brand-new item
+        const { data: inserted } = await supabase
           .from("custom_bill_items")
-          .insert({
-            custom_bill_id: bill.id,
-            item_id: item.id,
-            item_name: item.name,
-            item_price: item.price,
-          })
-          .select()
-          .single();
+          .insert({ custom_bill_id: bill.id, item_id: item.id, item_name: item.name, item_price: item.price })
+          .select("id").single();
+        if (!inserted) continue;
+        dbPk = inserted.id;
+      } else {
+        // Existing item — update name/price (idempotent)
+        await supabase.from("custom_bill_items")
+          .update({ item_name: item.name, item_price: item.price }).eq("id", dbPk);
+      }
 
-        if (itemError) {
-          console.error("❌ Error saving item:", itemError);
-          return false;
-        }
-
-        if (item.assignedTo.length > 0) {
-          const { error: assignmentError } = await supabase.from("custom_bill_item_assignments").insert(
-            item.assignedTo.map((personId) => ({
-              item_id: insertedItem.id,
-              person_id: personId,
-            })),
-          );
-
-          if (assignmentError) {
-            console.error("❌ Error saving assignments:", assignmentError);
-            return false;
-          }
-        }
+      // Rewrite assignments for this item (small, safe)
+      await supabase.from("custom_bill_item_assignments").delete().eq("item_id", dbPk);
+      if (item.assignedTo.length > 0) {
+        await supabase.from("custom_bill_item_assignments").insert(
+          item.assignedTo.map((personId) => ({ item_id: dbPk, person_id: personId }))
+        );
       }
     }
 
@@ -397,6 +381,7 @@ export async function saveCustomBillToSupabase(
     return false;
   }
 }
+
 
 export async function deleteCustomBillFromSupabase(title: string, userEmail: string) {
   try {
