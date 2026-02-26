@@ -81,15 +81,21 @@ const Index = () => {
   const isSavingRef = useRef(false);
   const needsResaveRef = useRef(false);
 
-  // Load data from Supabase on mount
+  // Load data: compare localStorage timestamp vs Supabase updated_at, use whichever is newer
   useEffect(() => {
-    if (!initialTitle) {
-      setIsLoading(false);
-      return;
-    }
+    if (!initialTitle) { setIsLoading(false); return; }
 
     const loadData = async () => {
+      // Read localStorage draft first (synchronous)
+      const draft = localDraft.get<{
+        persons: PersonWithItems[];
+        enableService: boolean; enableTax: boolean;
+        customService: string; customTax: string;
+        savedAt: number;
+      }>(draftKey);
+
       const result = await loadCustomBillFromSupabase(initialTitle, userEmail);
+
       if (result) {
         const { people, items } = result;
         const personMapped = people.map((p) => ({
@@ -97,42 +103,31 @@ const Index = () => {
           name: p.person_name,
           items: items
             .filter((item) => item.assignedTo.includes(p.person_id))
-            .map((item) => ({
-              id: item.item_id,
-              name: item.item_name,
-              price: item.item_price,
-            })),
+            .map((item) => ({ id: item.item_id, name: item.item_name, price: item.item_price })),
         }));
 
-        // Safety: if Supabase returned people with 0 items but localStorage has richer data,
-        // prefer localStorage (handles case where load happened after an interrupted save)
-        const totalSupabaseItems = personMapped.reduce((s, p) => s + p.items.length, 0);
-        if (totalSupabaseItems === 0 && personMapped.length > 0) {
-          const draft = localDraft.get<{ persons: PersonWithItems[] }>(draftKey);
-          const totalDraftItems = draft?.persons?.reduce((s, p) => s + p.items.length, 0) ?? 0;
-          if (totalDraftItems > 0) {
-            setPersons(draft!.persons);
-            setEnableService(result.bill.enable_service);
-            setEnableTax(result.bill.enable_tax);
-            setCustomService(result.bill.custom_service || "");
-            setCustomTax(result.bill.custom_tax || "");
-            setIsLoading(false);
-            return; // Use draft data; save effect will re-sync to Supabase
-          }
-        }
+        // Compare timestamps: prefer whichever was written more recently
+        const supabaseTime = result.bill.updated_at ? new Date(result.bill.updated_at).getTime() : 0;
+        const draftTime = draft?.savedAt ?? 0;
+        const useDraft = draft && draftTime > supabaseTime;
 
-        setPersons(personMapped);
-        setEnableService(result.bill.enable_service);
-        setEnableTax(result.bill.enable_tax);
-        setCustomService(result.bill.custom_service || "");
-        setCustomTax(result.bill.custom_tax || "");
+        if (useDraft) {
+          // localStorage is newer (unsaved local changes) → use draft, re-sync will fix Supabase
+          setPersons(draft.persons);
+          setEnableService(draft.enableService);
+          setEnableTax(draft.enableTax);
+          setCustomService(draft.customService);
+          setCustomTax(draft.customTax);
+        } else {
+          // Supabase is up-to-date or draft missing
+          setPersons(personMapped);
+          setEnableService(result.bill.enable_service);
+          setEnableTax(result.bill.enable_tax);
+          setCustomService(result.bill.custom_service || "");
+          setCustomTax(result.bill.custom_tax || "");
+        }
       } else {
-        // Supabase failed → load from local draft
-        const draft = localDraft.get<{
-          persons: PersonWithItems[];
-          enableService: boolean; enableTax: boolean;
-          customService: string; customTax: string;
-        }>(draftKey);
+        // Supabase unavailable → load from draft
         if (draft) {
           setPersons(draft.persons);
           setEnableService(draft.enableService);
@@ -147,10 +142,10 @@ const Index = () => {
     loadData();
   }, [initialTitle]);
 
-  // Always save to localStorage draft immediately (no debounce)
+  // Always save to localStorage draft immediately with timestamp
   useEffect(() => {
     if (!splitTitle || isLoading) return;
-    localDraft.set(draftKey, { persons, enableService, enableTax, customService, customTax });
+    localDraft.set(draftKey, { persons, enableService, enableTax, customService, customTax, savedAt: Date.now() });
   }, [persons, splitTitle, enableService, enableTax, customService, customTax, isLoading]);
 
   // Sync to Supabase — debounced, with mutex to prevent concurrent saves causing duplicates
