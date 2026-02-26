@@ -77,6 +77,10 @@ const Index = () => {
   const [importBills, setImportBills] = useState<Bill[]>([]);
   const [importLoading, setImportLoading] = useState(false);
 
+  // Mutex: prevent concurrent Supabase saves (root cause of item duplication)
+  const isSavingRef = useRef(false);
+  const needsResaveRef = useRef(false);
+
   // Load data from Supabase on mount
   useEffect(() => {
     if (!initialTitle) {
@@ -149,40 +153,49 @@ const Index = () => {
     localDraft.set(draftKey, { persons, enableService, enableTax, customService, customTax });
   }, [persons, splitTitle, enableService, enableTax, customService, customTax, isLoading]);
 
-  // Sync to Supabase (debounced, fire-and-forget)
+  // Sync to Supabase — debounced, with mutex to prevent concurrent saves causing duplicates
   useEffect(() => {
     if (!splitTitle || isLoading) return;
 
-    const saveData = async () => {
+    const doSave = async (currentPersons: PersonWithItems[], currentEnableService: boolean, currentEnableTax: boolean, currentCustomService: string, currentCustomTax: string) => {
       const items: Array<{ id: string; name: string; price: number; assignedTo: string[] }> = [];
-      for (const person of persons) {
+      for (const person of currentPersons) {
         for (const item of person.items) {
-          const existingItem = items.find((i) => i.id === item.id);
-          if (existingItem) {
-            existingItem.assignedTo.push(person.id);
-          } else {
-            items.push({
-              id: item.id,
-              name: item.name,
-              price: item.price,
-              assignedTo: [person.id],
-            });
-          }
+          const existing = items.find((i) => i.id === item.id);
+          if (existing) { existing.assignedTo.push(person.id); }
+          else { items.push({ id: item.id, name: item.name, price: item.price, assignedTo: [person.id] }); }
         }
       }
       await saveCustomBillToSupabase(
         splitTitle,
-        persons.map((p) => ({ id: p.id, name: p.name })),
-        items,
-        enableService,
-        enableTax,
-        customService,
-        customTax,
-        userEmail,
+        currentPersons.map((p) => ({ id: p.id, name: p.name })),
+        items, currentEnableService, currentEnableTax, currentCustomService, currentCustomTax, userEmail,
       );
     };
 
-    const timeoutId = setTimeout(saveData, 500);
+    const saveData = async () => {
+      // Capture current state values for this save
+      const snap = { persons, enableService, enableTax, customService, customTax };
+
+      if (isSavingRef.current) {
+        needsResaveRef.current = true; // another save is in-flight; mark pending
+        return;
+      }
+      isSavingRef.current = true;
+      needsResaveRef.current = false;
+      try {
+        await doSave(snap.persons, snap.enableService, snap.enableTax, snap.customService, snap.customTax);
+        // If state changed while we were saving, run one more save with latest
+        if (needsResaveRef.current) {
+          needsResaveRef.current = false;
+          await doSave(persons, enableService, enableTax, customService, customTax);
+        }
+      } finally {
+        isSavingRef.current = false;
+      }
+    };
+
+    const timeoutId = setTimeout(saveData, 1500);
     return () => clearTimeout(timeoutId);
   }, [persons, splitTitle, enableService, enableTax, customService, customTax, isLoading]);
 
@@ -628,7 +641,7 @@ const Index = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </div >
   );
 };
 
