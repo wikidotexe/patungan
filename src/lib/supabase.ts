@@ -306,10 +306,24 @@ export async function saveCustomBillToSupabase(
       }
     }
 
-    // Delete old items and assignments
+    // Delete old items and their assignments
+    // Must delete assignments FIRST to avoid FK constraint violation
+    const { data: oldItems } = await supabase
+      .from("custom_bill_items")
+      .select("id")
+      .eq("custom_bill_id", bill.id);
+
+    if (oldItems && oldItems.length > 0) {
+      await supabase
+        .from("custom_bill_item_assignments")
+        .delete()
+        .in("item_id", oldItems.map((i) => i.id));
+    }
+
     const { error: deleteItemsError } = await supabase.from("custom_bill_items").delete().eq("custom_bill_id", bill.id);
     if (deleteItemsError) {
-      console.warn("⚠️ Warning deleting old items:", deleteItemsError);
+      console.error("❌ Error deleting old items:", deleteItemsError);
+      return false;
     }
 
     // Insert new items and assignments
