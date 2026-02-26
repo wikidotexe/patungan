@@ -19,6 +19,7 @@ export interface Bill {
   enable_tax: boolean;
   custom_service: string | null;
   custom_tax: string | null;
+  items_json: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -62,25 +63,33 @@ export interface CustomBillItem {
 // Simple Split Bill Functions
 export async function loadBillFromSupabase(title: string, userEmail: string) {
   try {
-    const { data: bill, error: billError } = await supabase
+    let { data: bill, error: billError } = await supabase
       .from("bills")
       .select("*")
       .eq("title", title)
       .eq("user_email", userEmail)
       .single();
 
-    if (billError) {
-      console.warn("⚠️ Bill not found or error:", billError.message);
-      return null;
+    // Fallback: try legacy data with empty user_email, then migrate
+    if (billError || !bill) {
+      const { data: legacyBill } = await supabase
+        .from("bills")
+        .select("*")
+        .eq("title", title)
+        .eq("user_email", "")
+        .maybeSingle();
+      if (legacyBill) {
+        await supabase.from("bills").update({ user_email: userEmail }).eq("id", legacyBill.id);
+        bill = { ...legacyBill, user_email: userEmail };
+        billError = null;
+      } else {
+        console.warn("⚠️ Bill not found:", title);
+        return null;
+      }
     }
 
     const { data: people, error: peopleError } = await supabase.from("bill_people").select("*").eq("bill_id", bill.id);
-
-    if (peopleError) {
-      console.error("❌ Error loading people:", peopleError);
-      return null;
-    }
-
+    if (peopleError) { console.error("❌ Error loading people:", peopleError); return null; }
     return { bill, people: people || [] };
   } catch (error) {
     console.error("❌ Error in loadBillFromSupabase:", error);
@@ -88,7 +97,13 @@ export async function loadBillFromSupabase(title: string, userEmail: string) {
   }
 }
 
-export async function saveBillToSupabase(title: string, billName: string, totalBill: string, persons: Array<{ id: string; name: string }>, enableService: boolean, enableTax: boolean, customService: string, customTax: string, userEmail: string) {
+export async function saveBillToSupabase(
+  title: string, billName: string, totalBill: string,
+  persons: Array<{ id: string; name: string }>,
+  enableService: boolean, enableTax: boolean,
+  customService: string, customTax: string, userEmail: string,
+  items: Array<{ id: string; name: string; price: number }> = []
+) {
   try {
     const { data: existingBill } = await supabase
       .from("bills")
@@ -110,6 +125,7 @@ export async function saveBillToSupabase(title: string, billName: string, totalB
           enable_tax: enableTax,
           custom_service: customService,
           custom_tax: customTax,
+          items_json: JSON.stringify(items),
           updated_at: new Date().toISOString(),
         })
         .eq("id", existingBill.id)
@@ -129,6 +145,7 @@ export async function saveBillToSupabase(title: string, billName: string, totalB
           enable_tax: enableTax,
           custom_service: customService,
           custom_tax: customTax,
+          items_json: JSON.stringify(items),
         })
         .select()
         .single();
@@ -182,16 +199,29 @@ export async function deleteBillFromSupabase(title: string, userEmail: string) {
 // Custom Split Bill Functions
 export async function loadCustomBillFromSupabase(title: string, userEmail: string) {
   try {
-    const { data: bill, error: billError } = await supabase
+    let { data: bill, error: billError } = await supabase
       .from("custom_bills")
       .select("*")
       .eq("title", title)
       .eq("user_email", userEmail)
       .single();
 
-    if (billError) {
-      console.warn("⚠️ Custom bill not found or error:", billError.message);
-      return null;
+    // Fallback: try legacy data with empty user_email, then migrate
+    if (billError || !bill) {
+      const { data: legacyBill } = await supabase
+        .from("custom_bills")
+        .select("*")
+        .eq("title", title)
+        .eq("user_email", "")
+        .maybeSingle();
+      if (legacyBill) {
+        await supabase.from("custom_bills").update({ user_email: userEmail }).eq("id", legacyBill.id);
+        bill = { ...legacyBill, user_email: userEmail };
+        billError = null;
+      } else {
+        console.warn("⚠️ Custom bill not found:", title);
+        return null;
+      }
     }
 
 
@@ -392,7 +422,7 @@ export async function getAllBillsFromSupabase(userEmail: string) {
     const { data: bills, error } = await supabase
       .from("bills")
       .select("*")
-      .eq("user_email", userEmail)
+      .or(`user_email.eq.${userEmail},user_email.eq.`)
       .order("updated_at", { ascending: false });
 
     if (error) {
@@ -411,7 +441,7 @@ export async function getAllCustomBillsFromSupabase(userEmail: string) {
     const { data: bills, error } = await supabase
       .from("custom_bills")
       .select("*")
-      .eq("user_email", userEmail)
+      .or(`user_email.eq.${userEmail},user_email.eq.`)
       .order("updated_at", { ascending: false });
 
     if (error) {
