@@ -21,6 +21,7 @@ import {
     updateNotesOrderInSupabase,
 } from "@/lib/supabase";
 import { getStoredUser } from "@/lib/userStore";
+import { localDraft } from "@/lib/localDraft";
 
 interface Note {
     id: string;       // note_id (UUID string)
@@ -38,6 +39,7 @@ const formatDate = (ts: number) =>
 
 const Notes = () => {
     const userEmail = getStoredUser()?.email ?? "";
+    const draftKey = `notes_${userEmail}`;
     const [notes, setNotes] = useState<Note[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -49,19 +51,26 @@ const Notes = () => {
     const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
     const [isAdding, setIsAdding] = useState(false);
 
-    // Load notes from Supabase on mount
+    // Load notes from Supabase on mount, fallback to localStorage draft
     useEffect(() => {
         const load = async () => {
             const rows = await loadNotesFromSupabase(userEmail);
-            const mapped: Note[] = rows.map((r) => ({
-                id: r.note_id,
-                title: r.title,
-                content: r.content,
-                createdAt: new Date(r.created_at).getTime(),
-                updatedAt: new Date(r.updated_at).getTime(),
-                sortOrder: r.sort_order,
-            }));
-            setNotes(mapped);
+            if (rows.length > 0) {
+                const mapped: Note[] = rows.map((r) => ({
+                    id: r.note_id,
+                    title: r.title,
+                    content: r.content,
+                    createdAt: new Date(r.created_at).getTime(),
+                    updatedAt: new Date(r.updated_at).getTime(),
+                    sortOrder: r.sort_order,
+                }));
+                setNotes(mapped);
+                localDraft.set(draftKey, mapped); // keep draft in sync
+            } else {
+                // Supabase empty or failed → load from local draft
+                const draft = localDraft.get<Note[]>(draftKey);
+                if (draft && draft.length > 0) setNotes(draft);
+            }
             setIsLoading(false);
         };
         load();
@@ -92,9 +101,12 @@ const Notes = () => {
         setIsAdding(false);
         toast.success("Catatan ditambahkan!");
 
-        // Save to Supabase (new note + update sort orders)
-        await saveNoteToSupabase({ note_id: note.id, title: note.title, content: note.content, sort_order: 0, user_email: userEmail });
-        await updateNotesOrderInSupabase(
+        // Save to localStorage draft immediately
+        localDraft.set(draftKey, updatedNotes);
+
+        // Sync to Supabase (fire-and-forget)
+        saveNoteToSupabase({ note_id: note.id, title: note.title, content: note.content, sort_order: 0, user_email: userEmail });
+        updateNotesOrderInSupabase(
             updatedNotes.slice(1).map((n) => ({ note_id: n.id, sort_order: n.sortOrder }))
         );
     };
@@ -111,17 +123,18 @@ const Notes = () => {
         const updatedNote = notes.find((n) => n.id === editingId);
         if (!updatedNote) return;
 
-        setNotes((prev) =>
-            prev.map((n) =>
-                n.id === editingId
-                    ? { ...n, title: title || "Tanpa Judul", content, updatedAt: now }
-                    : n
-            )
+        const updatedNotes = notes.map((n) =>
+            n.id === editingId ? { ...n, title: title || "Tanpa Judul", content, updatedAt: now } : n
         );
+        setNotes(updatedNotes);
         setEditingId(null);
         toast.success("Catatan diperbarui!");
 
-        await saveNoteToSupabase({
+        // Save to localStorage draft immediately
+        localDraft.set(draftKey, updatedNotes);
+
+        // Sync to Supabase (fire-and-forget)
+        saveNoteToSupabase({
             note_id: editingId,
             title: title || "Tanpa Judul",
             content,
@@ -132,11 +145,16 @@ const Notes = () => {
 
     const confirmDelete = async () => {
         if (!deleteTarget) return;
-        setNotes((prev) => prev.filter((n) => n.id !== deleteTarget));
+        const updatedNotes = notes.filter((n) => n.id !== deleteTarget);
+        setNotes(updatedNotes);
         setDeleteTarget(null);
         toast.success("Catatan dihapus!");
 
-        await deleteNoteFromSupabase(deleteTarget);
+        // Save to localStorage draft immediately
+        localDraft.set(draftKey, updatedNotes);
+
+        // Sync to Supabase (fire-and-forget)
+        deleteNoteFromSupabase(deleteTarget);
     };
 
     const startEdit = (note: Note) => {
@@ -154,7 +172,11 @@ const Notes = () => {
         const withOrder = reordered.map((n, i) => ({ ...n, sortOrder: i }));
         setNotes(withOrder);
 
-        await updateNotesOrderInSupabase(withOrder.map((n) => ({ note_id: n.id, sort_order: n.sortOrder })));
+        // Save to localStorage draft immediately
+        localDraft.set(draftKey, withOrder);
+
+        // Sync to Supabase (fire-and-forget)
+        updateNotesOrderInSupabase(withOrder.map((n) => ({ note_id: n.id, sort_order: n.sortOrder })));
     };
 
     return (

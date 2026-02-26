@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import Footer from "@/components/Footer";
 import { getStoredUser } from "@/lib/userStore";
+import { localDraft } from "@/lib/localDraft";
 
 let nextId = 1;
 const genId = () => String(nextId++);
@@ -57,7 +58,9 @@ const SplitBill = () => {
   const [customService, setCustomService] = useState("");
   const [customTax, setCustomTax] = useState("");
 
-  // Load data from Supabase on mount
+  const draftKey = `bill_${userEmail}_${initialTitle}`;
+
+  // Load data from Supabase on mount, fallback to localStorage draft
   useEffect(() => {
     if (!initialTitle) {
       setIsLoading(false);
@@ -81,6 +84,22 @@ const SplitBill = () => {
         setCustomService(bill.custom_service || "");
         setCustomTax(bill.custom_tax || "");
       } else {
+        // Supabase failed → load from local draft
+        const draft = localDraft.get<{
+          billName: string; totalBill: string;
+          persons: Array<{ id: string; name: string }>;
+          enableService: boolean; enableTax: boolean;
+          customService: string; customTax: string;
+        }>(draftKey);
+        if (draft) {
+          setBillName(draft.billName);
+          setTotalBill(draft.totalBill);
+          setPersons(draft.persons);
+          setEnableService(draft.enableService);
+          setEnableTax(draft.enableTax);
+          setCustomService(draft.customService);
+          setCustomTax(draft.customTax);
+        }
       }
       setIsLoading(false);
     };
@@ -88,23 +107,21 @@ const SplitBill = () => {
     loadData();
   }, [initialTitle]);
 
-  // Persistence to Supabase
+  // Always save to localStorage draft immediately (no debounce)
+  useEffect(() => {
+    if (!initialTitle || isLoading) return;
+    localDraft.set(draftKey, { billName, totalBill, persons, enableService, enableTax, customService, customTax });
+  }, [billName, totalBill, persons, enableService, enableTax, customService, customTax, initialTitle, isLoading]);
+
+  // Sync to Supabase (debounced, fire-and-forget)
   useEffect(() => {
     if (!initialTitle || isLoading) return;
 
     const saveData = async () => {
-      const success = await saveBillToSupabase(initialTitle, billName, totalBill, persons, enableService, enableTax, customService, customTax, userEmail);
-      if (!success) {
-        console.error("❌ Failed to save bill data!");
-        toast.error("Gagal menyimpan data");
-      }
+      await saveBillToSupabase(initialTitle, billName, totalBill, persons, enableService, enableTax, customService, customTax, userEmail);
     };
 
-    // Debounce saving to avoid too many requests
-    const timeoutId = setTimeout(() => {
-      saveData();
-    }, 500);
-
+    const timeoutId = setTimeout(saveData, 500);
     return () => clearTimeout(timeoutId);
   }, [billName, totalBill, persons, enableService, enableTax, customService, customTax, initialTitle, isLoading]);
 
@@ -126,7 +143,7 @@ const SplitBill = () => {
     setEnableTax(true);
     setCustomService("");
     setCustomTax("");
-
+    localDraft.remove(draftKey);
     await deleteBillFromSupabase(initialTitle, userEmail);
     toast.info("Data dibersihkan");
     setResetConfirmOpen(false);

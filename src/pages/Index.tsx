@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { exportElementToPDF } from "@/lib/pdf";
 import Footer from "@/components/Footer";
 import { getStoredUser } from "@/lib/userStore";
+import { localDraft } from "@/lib/localDraft";
 
 const genId = () => crypto.randomUUID();
 
@@ -60,6 +61,7 @@ const Index = () => {
 
   const initialTitle = getTitleFromUrl();
   const userEmail = getStoredUser()?.email ?? "";
+  const draftKey = `custom_bill_${userEmail}_${initialTitle}`;
   const [isLoading, setIsLoading] = useState(true);
   const [persons, setPersons] = useState<PersonWithItems[]>([]);
   const [splitTitle, setSplitTitle] = useState(initialTitle);
@@ -98,6 +100,19 @@ const Index = () => {
         setCustomService(result.bill.custom_service || "");
         setCustomTax(result.bill.custom_tax || "");
       } else {
+        // Supabase failed → load from local draft
+        const draft = localDraft.get<{
+          persons: PersonWithItems[];
+          enableService: boolean; enableTax: boolean;
+          customService: string; customTax: string;
+        }>(draftKey);
+        if (draft) {
+          setPersons(draft.persons);
+          setEnableService(draft.enableService);
+          setEnableTax(draft.enableTax);
+          setCustomService(draft.customService);
+          setCustomTax(draft.customTax);
+        }
       }
       setIsLoading(false);
     };
@@ -105,7 +120,13 @@ const Index = () => {
     loadData();
   }, [initialTitle]);
 
-  // Persistence to Supabase
+  // Always save to localStorage draft immediately (no debounce)
+  useEffect(() => {
+    if (!splitTitle || isLoading) return;
+    localDraft.set(draftKey, { persons, enableService, enableTax, customService, customTax });
+  }, [persons, splitTitle, enableService, enableTax, customService, customTax, isLoading]);
+
+  // Sync to Supabase (debounced, fire-and-forget)
   useEffect(() => {
     if (!splitTitle || isLoading) return;
 
@@ -126,8 +147,7 @@ const Index = () => {
           }
         }
       }
-
-      const success = await saveCustomBillToSupabase(
+      await saveCustomBillToSupabase(
         splitTitle,
         persons.map((p) => ({ id: p.id, name: p.name })),
         items,
@@ -137,18 +157,9 @@ const Index = () => {
         customTax,
         userEmail,
       );
-
-      if (!success) {
-        console.error("❌ Failed to save custom bill data!");
-        toast.error("Gagal menyimpan data");
-      }
     };
 
-    // Debounce saving to avoid too many requests
-    const timeoutId = setTimeout(() => {
-      saveData();
-    }, 500);
-
+    const timeoutId = setTimeout(saveData, 500);
     return () => clearTimeout(timeoutId);
   }, [persons, splitTitle, enableService, enableTax, customService, customTax, isLoading]);
 
@@ -160,7 +171,7 @@ const Index = () => {
     setEnableTax(true);
     setCustomService("");
     setCustomTax("");
-
+    localDraft.remove(draftKey);
     await deleteCustomBillFromSupabase(splitTitle, userEmail);
     toast.info("Data dibersihkan");
     setResetConfirmOpen(false);
