@@ -9,6 +9,7 @@ import { loadCustomBillFromSupabase, saveCustomBillToSupabase, deleteCustomBillF
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { exportElementToPDF } from "@/lib/pdf";
 import Footer from "@/components/Footer";
+import { getStoredUser } from "@/lib/userStore";
 
 const genId = () => crypto.randomUUID();
 
@@ -58,6 +59,7 @@ const Index = () => {
   };
 
   const initialTitle = getTitleFromUrl();
+  const userEmail = getStoredUser()?.email ?? "";
   const [isLoading, setIsLoading] = useState(true);
   const [persons, setPersons] = useState<PersonWithItems[]>([]);
   const [splitTitle, setSplitTitle] = useState(initialTitle);
@@ -76,7 +78,7 @@ const Index = () => {
     }
 
     const loadData = async () => {
-      const result = await loadCustomBillFromSupabase(initialTitle);
+      const result = await loadCustomBillFromSupabase(initialTitle, userEmail);
       if (result) {
         const { people, items } = result;
         const personMapped = people.map((p) => ({
@@ -133,6 +135,7 @@ const Index = () => {
         enableTax,
         customService,
         customTax,
+        userEmail,
       );
 
       if (!success) {
@@ -158,7 +161,7 @@ const Index = () => {
     setCustomService("");
     setCustomTax("");
 
-    await deleteCustomBillFromSupabase(splitTitle);
+    await deleteCustomBillFromSupabase(splitTitle, userEmail);
     toast.info("Data dibersihkan");
     setResetConfirmOpen(false);
   };

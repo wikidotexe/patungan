@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, Trash2, Clock, Plus, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { getAllCustomBillsFromSupabase, deleteCustomBillFromSupabase } from "@/lib/supabase";
+import { getStoredUser } from "@/lib/userStore";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const CustomSplitTitle = () => {
@@ -13,10 +14,11 @@ const CustomSplitTitle = () => {
   const [editValue, setEditValue] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const navigate = useNavigate();
+  const userEmail = getStoredUser()?.email ?? "";
 
   useEffect(() => {
     const loadBills = async () => {
-      const bills = await getAllCustomBillsFromSupabase();
+      const bills = await getAllCustomBillsFromSupabase(userEmail);
       setSavedBills(bills);
       setIsLoading(false);
     };
@@ -26,7 +28,7 @@ const CustomSplitTitle = () => {
   const confirmDeleteBill = async () => {
     if (!deleteTarget) return;
 
-    const success = await deleteCustomBillFromSupabase(deleteTarget);
+    const success = await deleteCustomBillFromSupabase(deleteTarget, userEmail);
     if (success) {
       const newList = savedBills.filter((b) => b.title !== deleteTarget);
       setSavedBills(newList);

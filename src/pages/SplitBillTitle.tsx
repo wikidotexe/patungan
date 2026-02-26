@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, Trash2, Clock, Plus, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { getAllBillsFromSupabase, deleteBillFromSupabase } from "@/lib/supabase";
+import { getStoredUser } from "@/lib/userStore";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const SplitBillTitle = () => {
@@ -13,10 +14,11 @@ const SplitBillTitle = () => {
   const [editValue, setEditValue] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const navigate = useNavigate();
+  const userEmail = getStoredUser()?.email ?? "";
 
   useEffect(() => {
     const loadBills = async () => {
-      const bills = await getAllBillsFromSupabase();
+      const bills = await getAllBillsFromSupabase(userEmail);
       setSavedBills(bills);
       setIsLoading(false);
     };
@@ -26,7 +28,7 @@ const SplitBillTitle = () => {
   const confirmDeleteBill = async () => {
     if (!deleteTarget) return;
 
-    const success = await deleteBillFromSupabase(deleteTarget);
+    const success = await deleteBillFromSupabase(deleteTarget, userEmail);
     if (success) {
       const newList = savedBills.filter((b) => b.title !== deleteTarget);
       setSavedBills(newList);

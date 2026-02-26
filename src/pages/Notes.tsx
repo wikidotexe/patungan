@@ -20,6 +20,7 @@ import {
     deleteNoteFromSupabase,
     updateNotesOrderInSupabase,
 } from "@/lib/supabase";
+import { getStoredUser } from "@/lib/userStore";
 
 interface Note {
     id: string;       // note_id (UUID string)
@@ -36,6 +37,7 @@ const formatDate = (ts: number) =>
     new Date(ts).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 const Notes = () => {
+    const userEmail = getStoredUser()?.email ?? "";
     const [notes, setNotes] = useState<Note[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -50,7 +52,7 @@ const Notes = () => {
     // Load notes from Supabase on mount
     useEffect(() => {
         const load = async () => {
-            const rows = await loadNotesFromSupabase();
+            const rows = await loadNotesFromSupabase(userEmail);
             const mapped: Note[] = rows.map((r) => ({
                 id: r.note_id,
                 title: r.title,
@@ -91,7 +93,7 @@ const Notes = () => {
         toast.success("Catatan ditambahkan!");
 
         // Save to Supabase (new note + update sort orders)
-        await saveNoteToSupabase({ note_id: note.id, title: note.title, content: note.content, sort_order: 0 });
+        await saveNoteToSupabase({ note_id: note.id, title: note.title, content: note.content, sort_order: 0, user_email: userEmail });
         await updateNotesOrderInSupabase(
             updatedNotes.slice(1).map((n) => ({ note_id: n.id, sort_order: n.sortOrder }))
         );
@@ -124,6 +126,7 @@ const Notes = () => {
             title: title || "Tanpa Judul",
             content,
             sort_order: updatedNote.sortOrder,
+            user_email: userEmail,
         });
     };
 

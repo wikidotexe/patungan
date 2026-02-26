@@ -60,16 +60,19 @@ export interface CustomBillItem {
 }
 
 // Simple Split Bill Functions
-export async function loadBillFromSupabase(title: string) {
+export async function loadBillFromSupabase(title: string, userEmail: string) {
   try {
-
-    const { data: bill, error: billError } = await supabase.from("bills").select("*").eq("title", title).single();
+    const { data: bill, error: billError } = await supabase
+      .from("bills")
+      .select("*")
+      .eq("title", title)
+      .eq("user_email", userEmail)
+      .single();
 
     if (billError) {
       console.warn("⚠️ Bill not found or error:", billError.message);
       return null;
     }
-
 
     const { data: people, error: peopleError } = await supabase.from("bill_people").select("*").eq("bill_id", bill.id);
 
@@ -78,28 +81,26 @@ export async function loadBillFromSupabase(title: string) {
       return null;
     }
 
-
-    return {
-      bill,
-      people: people || [],
-    };
+    return { bill, people: people || [] };
   } catch (error) {
     console.error("❌ Error in loadBillFromSupabase:", error);
     return null;
   }
 }
 
-export async function saveBillToSupabase(title: string, billName: string, totalBill: string, persons: Array<{ id: string; name: string }>, enableService: boolean, enableTax: boolean, customService: string, customTax: string) {
+export async function saveBillToSupabase(title: string, billName: string, totalBill: string, persons: Array<{ id: string; name: string }>, enableService: boolean, enableTax: boolean, customService: string, customTax: string, userEmail: string) {
   try {
-
-    // First, check if bill exists
-    const { data: existingBill, error: checkError } = await supabase.from("bills").select("id").eq("title", title).maybeSingle();
+    const { data: existingBill } = await supabase
+      .from("bills")
+      .select("id")
+      .eq("title", title)
+      .eq("user_email", userEmail)
+      .maybeSingle();
 
     let bill;
     let billError;
 
     if (existingBill) {
-      // Update existing bill
       const { data: updatedBill, error: updateError } = await supabase
         .from("bills")
         .update({
@@ -114,15 +115,14 @@ export async function saveBillToSupabase(title: string, billName: string, totalB
         .eq("id", existingBill.id)
         .select()
         .single();
-
       bill = updatedBill;
       billError = updateError;
     } else {
-      // Insert new bill
       const { data: newBill, error: insertError } = await supabase
         .from("bills")
         .insert({
           title,
+          user_email: userEmail,
           bill_name: billName,
           total_bill: totalBill ? parseFloat(totalBill) : null,
           enable_service: enableService,
@@ -132,28 +132,22 @@ export async function saveBillToSupabase(title: string, billName: string, totalB
         })
         .select()
         .single();
-
       bill = newBill;
       billError = insertError;
     }
 
-
-    // Delete old people
-    const { error: deleteError } = await supabase.from("bill_people").delete().eq("bill_id", bill.id);
-    if (deleteError) {
-      console.warn("⚠️ Warning deleting old people:", deleteError);
+    if (billError || !bill) {
+      console.error("❌ Error saving bill:", billError);
+      return false;
     }
 
-    // Insert new people
+    const { error: deleteError } = await supabase.from("bill_people").delete().eq("bill_id", bill.id);
+    if (deleteError) console.warn("⚠️ Warning deleting old people:", deleteError);
+
     if (persons.length > 0) {
       const { error: peopleError } = await supabase.from("bill_people").insert(
-        persons.map((p) => ({
-          bill_id: bill.id,
-          person_id: p.id,
-          person_name: p.name,
-        })),
+        persons.map((p) => ({ bill_id: bill.id, person_id: p.id, person_name: p.name })),
       );
-
       if (peopleError) {
         console.error("❌ Error saving people:", peopleError);
         return false;
@@ -167,14 +161,17 @@ export async function saveBillToSupabase(title: string, billName: string, totalB
   }
 }
 
-export async function deleteBillFromSupabase(title: string) {
+export async function deleteBillFromSupabase(title: string, userEmail: string) {
   try {
-    const { data: bill } = await supabase.from("bills").select("id").eq("title", title).single();
+    const { data: bill } = await supabase
+      .from("bills")
+      .select("id")
+      .eq("title", title)
+      .eq("user_email", userEmail)
+      .single();
 
     if (!bill) return false;
-
     const { error } = await supabase.from("bills").delete().eq("id", bill.id);
-
     return !error;
   } catch (error) {
     console.error("Error deleting bill:", error);
@@ -183,10 +180,14 @@ export async function deleteBillFromSupabase(title: string) {
 }
 
 // Custom Split Bill Functions
-export async function loadCustomBillFromSupabase(title: string) {
+export async function loadCustomBillFromSupabase(title: string, userEmail: string) {
   try {
-
-    const { data: bill, error: billError } = await supabase.from("custom_bills").select("*").eq("title", title).single();
+    const { data: bill, error: billError } = await supabase
+      .from("custom_bills")
+      .select("*")
+      .eq("title", title)
+      .eq("user_email", userEmail)
+      .single();
 
     if (billError) {
       console.warn("⚠️ Custom bill not found or error:", billError.message);
@@ -236,11 +237,15 @@ export async function saveCustomBillToSupabase(
   enableTax: boolean,
   customService: string,
   customTax: string,
+  userEmail: string,
 ) {
   try {
-
-    // First, check if bill exists
-    const { data: existingBill, error: checkError } = await supabase.from("custom_bills").select("id").eq("title", title).maybeSingle();
+    const { data: existingBill } = await supabase
+      .from("custom_bills")
+      .select("id")
+      .eq("title", title)
+      .eq("user_email", userEmail)
+      .maybeSingle();
 
     let bill;
     let billError;
@@ -263,11 +268,11 @@ export async function saveCustomBillToSupabase(
       bill = updatedBill;
       billError = updateError;
     } else {
-      // Insert new bill
       const { data: newBill, error: insertError } = await supabase
         .from("custom_bills")
         .insert({
           title,
+          user_email: userEmail,
           enable_service: enableService,
           enable_tax: enableTax,
           custom_service: customService,
@@ -275,7 +280,6 @@ export async function saveCustomBillToSupabase(
         })
         .select()
         .single();
-
       bill = newBill;
       billError = insertError;
     }
@@ -350,14 +354,17 @@ export async function saveCustomBillToSupabase(
   }
 }
 
-export async function deleteCustomBillFromSupabase(title: string) {
+export async function deleteCustomBillFromSupabase(title: string, userEmail: string) {
   try {
-    const { data: bill } = await supabase.from("custom_bills").select("id").eq("title", title).single();
+    const { data: bill } = await supabase
+      .from("custom_bills")
+      .select("id")
+      .eq("title", title)
+      .eq("user_email", userEmail)
+      .single();
 
     if (!bill) return false;
-
     const { error } = await supabase.from("custom_bills").delete().eq("id", bill.id);
-
     return !error;
   } catch (error) {
     console.error("Error deleting custom bill:", error);
@@ -366,15 +373,18 @@ export async function deleteCustomBillFromSupabase(title: string) {
 }
 
 // Get all bills for list view
-export async function getAllBillsFromSupabase() {
+export async function getAllBillsFromSupabase(userEmail: string) {
   try {
-    const { data: bills, error } = await supabase.from("bills").select("*").order("updated_at", { ascending: false });
+    const { data: bills, error } = await supabase
+      .from("bills")
+      .select("*")
+      .eq("user_email", userEmail)
+      .order("updated_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching bills:", error);
       return [];
     }
-
     return bills || [];
   } catch (error) {
     console.error("Error in getAllBillsFromSupabase:", error);
@@ -382,15 +392,18 @@ export async function getAllBillsFromSupabase() {
   }
 }
 
-export async function getAllCustomBillsFromSupabase() {
+export async function getAllCustomBillsFromSupabase(userEmail: string) {
   try {
-    const { data: bills, error } = await supabase.from("custom_bills").select("*").order("updated_at", { ascending: false });
+    const { data: bills, error } = await supabase
+      .from("custom_bills")
+      .select("*")
+      .eq("user_email", userEmail)
+      .order("updated_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching custom bills:", error);
       return [];
     }
-
     return bills || [];
   } catch (error) {
     console.error("Error in getAllCustomBillsFromSupabase:", error);
@@ -462,11 +475,12 @@ export interface NoteRow {
   updated_at: string;
 }
 
-export async function loadNotesFromSupabase(): Promise<NoteRow[]> {
+export async function loadNotesFromSupabase(userEmail: string): Promise<NoteRow[]> {
   try {
     const { data, error } = await supabase
       .from("notes")
       .select("*")
+      .eq("user_email", userEmail)
       .order("sort_order", { ascending: true });
 
     if (error) {
@@ -486,6 +500,7 @@ export async function saveNoteToSupabase(note: {
   title: string;
   content: string;
   sort_order: number;
+  user_email: string;
 }): Promise<boolean> {
   try {
     const { error } = await supabase.from("notes").upsert(
@@ -494,6 +509,7 @@ export async function saveNoteToSupabase(note: {
         title: note.title,
         content: note.content,
         sort_order: note.sort_order,
+        user_email: note.user_email,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "note_id" },

@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import Footer from "@/components/Footer";
+import { getStoredUser } from "@/lib/userStore";
 
 let nextId = 1;
 const genId = () => String(nextId++);
@@ -46,6 +47,7 @@ const SplitBill = () => {
   };
 
   const initialTitle = getTitleFromUrl();
+  const userEmail = getStoredUser()?.email ?? "";
   const [isLoading, setIsLoading] = useState(true);
   const [billName, setBillName] = useState("");
   const [totalBill, setTotalBill] = useState("");
@@ -63,7 +65,7 @@ const SplitBill = () => {
     }
 
     const loadData = async () => {
-      const result = await loadBillFromSupabase(initialTitle);
+      const result = await loadBillFromSupabase(initialTitle, userEmail);
       if (result) {
         const { bill, people } = result;
         setBillName(bill.bill_name || initialTitle);
@@ -91,7 +93,7 @@ const SplitBill = () => {
     if (!initialTitle || isLoading) return;
 
     const saveData = async () => {
-      const success = await saveBillToSupabase(initialTitle, billName, totalBill, persons, enableService, enableTax, customService, customTax);
+      const success = await saveBillToSupabase(initialTitle, billName, totalBill, persons, enableService, enableTax, customService, customTax, userEmail);
       if (!success) {
         console.error("❌ Failed to save bill data!");
         toast.error("Gagal menyimpan data");
@@ -125,7 +127,7 @@ const SplitBill = () => {
     setCustomService("");
     setCustomTax("");
 
-    await deleteBillFromSupabase(initialTitle);
+    await deleteBillFromSupabase(initialTitle, userEmail);
     toast.info("Data dibersihkan");
     setResetConfirmOpen(false);
   };
