@@ -225,16 +225,14 @@ const SplitBill = () => {
               <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Item / Menu {items.length > 0 && <span className="text-primary">({items.length})</span>}
               </label>
-              {isMobile && (
-                <ReceiptScanner
-                  mode="split"
-                  onConfirm={(scanned) => {
-                    const newItems = scanned.map((i) => ({ id: genId(), name: i.name, price: i.price }));
-                    setItems((prev) => [...prev, ...newItems]);
-                    toast.success(`${newItems.length} item ditambahkan dari struk`);
-                  }}
-                />
-              )}
+              <ReceiptScanner
+                mode="split"
+                onConfirm={(scanned) => {
+                  const newItems = scanned.map((i) => ({ id: genId(), name: i.name, price: i.price }));
+                  setItems((prev) => [...prev, ...newItems]);
+                  toast.success(`${newItems.length} item ditambahkan dari struk`);
+                }}
+              />
             </div>
 
             {/* Item list */}

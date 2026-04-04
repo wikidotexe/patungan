@@ -357,18 +357,16 @@ const Index = () => {
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Item per Teman</h2>
               <div className="flex items-center gap-2">
-                {isMobile && (
-                  <ReceiptScanner
-                    mode="custom"
-                    persons={persons}
-                    onConfirm={(scanned) => {
-                      scanned.forEach(({ name, price, personId }) => {
-                        addItemToPerson(personId, name, price);
-                      });
-                      toast.success(`${scanned.length} item ditambahkan dari struk`);
-                    }}
-                  />
-                )}
+                <ReceiptScanner
+                  mode="custom"
+                  persons={persons}
+                  onConfirm={(scanned) => {
+                    scanned.forEach(({ name, price, personId }) => {
+                      addItemToPerson(personId, name, price);
+                    });
+                    toast.success(`${scanned.length} item ditambahkan dari struk`);
+                  }}
+                />
                 <button
                   onClick={openImportModal}
                   className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 rounded-lg px-3 py-1.5 transition-colors"

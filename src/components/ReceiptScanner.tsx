@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Camera, Loader2, Check, X } from "lucide-react";
+import { Camera, Image, Loader2, Check, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -26,15 +26,14 @@ interface CustomProps {
 type ReceiptScannerProps = SplitProps | CustomProps;
 
 export const ReceiptScanner = (props: ReceiptScannerProps) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [scannedItems, setScannedItems] = useState<ScannedItem[]>([]);
   const [showReview, setShowReview] = useState(false);
 
-  const handleCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processFile = async (file: File) => {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY?.trim();
     if (!apiKey || apiKey === "your_api_key_here") {
       toast.error("Gemini API Key belum dikonfigurasi!");
@@ -105,8 +104,14 @@ Jika tidak ada item yang terdeteksi, kembalikan [].`;
       toast.error("Gagal memindai struk. Pastikan foto jelas dan coba lagi.");
     } finally {
       setIsScanning(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+      if (galleryInputRef.current) galleryInputRef.current.value = "";
     }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processFile(file);
   };
 
   const handleConfirm = () => {
@@ -147,28 +152,78 @@ Jika tidak ada item yang terdeteksi, kembalikan [].`;
 
   return (
     <>
+      {/* Hidden file inputs */}
       <input
-        ref={fileInputRef}
+        ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
         className="hidden"
-        onChange={handleCapture}
+        onChange={handleFileChange}
+      />
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
       />
 
-      <button
-        onClick={() => fileInputRef.current?.click()}
-        disabled={isScanning}
-        className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        title="Foto struk untuk scan otomatis"
-      >
-        {isScanning ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        ) : (
-          <Camera className="h-3.5 w-3.5" />
-        )}
-        Scan Struk
-      </button>
+      {/* Trigger button + dropdown menu */}
+      <div className="relative">
+        <button
+          onClick={() => setShowMenu((v) => !v)}
+          disabled={isScanning}
+          className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Foto struk untuk scan otomatis"
+        >
+          {isScanning ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Camera className="h-3.5 w-3.5" />
+          )}
+          Scan Struk
+        </button>
+
+        <AnimatePresence>
+          {showMenu && (
+            <>
+              {/* Click-outside overlay */}
+              <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                transition={{ duration: 0.12 }}
+                className="absolute right-0 top-full mt-1.5 z-50 w-44 rounded-xl border border-border bg-card shadow-lg overflow-hidden"
+              >
+                <button
+                  onClick={() => {
+                    setShowMenu(false);
+                    cameraInputRef.current?.click();
+                  }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                >
+                  <Camera className="h-4 w-4 text-primary shrink-0" />
+                  Ambil Foto
+                </button>
+                <div className="border-t border-border" />
+                <button
+                  onClick={() => {
+                    setShowMenu(false);
+                    galleryInputRef.current?.click();
+                  }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                >
+                  <Image className="h-4 w-4 text-primary shrink-0" />
+                  Pilih dari Galeri
+                </button>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* Review Bottom Sheet */}
       <AnimatePresence>
