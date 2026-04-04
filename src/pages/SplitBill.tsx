@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { Person, formatRupiah, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/bill";
 import { PeopleSection } from "@/components/PeopleSection";
 import { ArrowLeft, CheckCircle2, Share2, Copy, Trash2, MessageCircle, Plus, X } from "lucide-react";
+import { ReceiptScanner } from "@/components/ReceiptScanner";
 import { loadBillFromSupabase, saveBillToSupabase, deleteBillFromSupabase } from "@/lib/supabase";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Link } from "react-router-dom";
@@ -220,9 +221,21 @@ const SplitBill = () => {
 
           {/* Items section */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Item / Menu {items.length > 0 && <span className="text-primary">({items.length})</span>}
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Item / Menu {items.length > 0 && <span className="text-primary">({items.length})</span>}
+              </label>
+              {isMobile && (
+                <ReceiptScanner
+                  mode="split"
+                  onConfirm={(scanned) => {
+                    const newItems = scanned.map((i) => ({ id: genId(), name: i.name, price: i.price }));
+                    setItems((prev) => [...prev, ...newItems]);
+                    toast.success(`${newItems.length} item ditambahkan dari struk`);
+                  }}
+                />
+              )}
+            </div>
 
             {/* Item list */}
             <AnimatePresence initial={false}>

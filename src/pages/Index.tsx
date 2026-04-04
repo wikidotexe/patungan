@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Person, formatRupiah, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/bill";
 import { PeopleSection } from "@/components/PeopleSection";
 import { ArrowLeft, CheckCircle2, Share2, Copy, Receipt, Plus, Trash2, FileDown, MessageCircle, Pencil, Check, X, ChevronDown } from "lucide-react";
+import { ReceiptScanner } from "@/components/ReceiptScanner";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -355,13 +356,27 @@ const Index = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Item per Teman</h2>
-              <button
-                onClick={openImportModal}
-                className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 rounded-lg px-3 py-1.5 transition-colors"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Import Sharing
-              </button>
+              <div className="flex items-center gap-2">
+                {isMobile && (
+                  <ReceiptScanner
+                    mode="custom"
+                    persons={persons}
+                    onConfirm={(scanned) => {
+                      scanned.forEach(({ name, price, personId }) => {
+                        addItemToPerson(personId, name, price);
+                      });
+                      toast.success(`${scanned.length} item ditambahkan dari struk`);
+                    }}
+                  />
+                )}
+                <button
+                  onClick={openImportModal}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 rounded-lg px-3 py-1.5 transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Import Sharing
+                </button>
+              </div>
             </div>
             {persons.map((person) => (
               <PersonItemCard
