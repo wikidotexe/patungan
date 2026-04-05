@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Person, formatRupiah, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/bill";
 import { PeopleSection } from "@/components/PeopleSection";
-import { ArrowLeft, CheckCircle2, Share2, Copy, Trash2, MessageCircle, Plus, X } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Share2, Copy, Trash2, MessageCircle, Plus, X, Edit2, Check, FileDown } from "lucide-react";
 import { ReceiptScanner } from "@/components/ReceiptScanner";
 import { loadBillFromSupabase, saveBillToSupabase, deleteBillFromSupabase } from "@/lib/supabase";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -11,10 +11,15 @@ import { toast } from "sonner";
 import Footer from "@/components/Footer";
 import { getStoredUser } from "@/lib/userStore";
 import { localDraft } from "@/lib/localDraft";
+import { exportElementToPDF, type ReceiptPerson } from "@/lib/pdf";
 
 const genId = () => crypto.randomUUID();
 
-interface BillItem { id: string; name: string; price: number; }
+interface BillItem {
+  id: string;
+  name: string;
+  price: number;
+}
 
 const SplitBill = () => {
   const isMobile = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
@@ -40,14 +45,21 @@ const SplitBill = () => {
   const [items, setItems] = useState<BillItem[]>([]);
   const [newItemName, setNewItemName] = useState("");
   const [newItemPrice, setNewItemPrice] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPrice, setEditPrice] = useState("");
   const itemNameRef = useRef<HTMLInputElement>(null);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   const itemsTotal = items.reduce((s, i) => s + i.price, 0);
   const totalBill = String(itemsTotal);
 
   // Load from Supabase, fallback to localStorage
   useEffect(() => {
-    if (!initialTitle) { setIsLoading(false); return; }
+    if (!initialTitle) {
+      setIsLoading(false);
+      return;
+    }
     const loadData = async () => {
       const result = await loadBillFromSupabase(initialTitle, userEmail);
       if (result) {
@@ -61,12 +73,18 @@ const SplitBill = () => {
         try {
           const parsed = bill.items_json ? JSON.parse(bill.items_json) : [];
           setItems(Array.isArray(parsed) ? parsed : []);
-        } catch { setItems([]); }
+        } catch {
+          setItems([]);
+        }
       } else {
         const draft = localDraft.get<{
-          billName: string; items: BillItem[];
-          persons: Person[]; enableService: boolean; enableTax: boolean;
-          customService: string; customTax: string;
+          billName: string;
+          items: BillItem[];
+          persons: Person[];
+          enableService: boolean;
+          enableTax: boolean;
+          customService: string;
+          customTax: string;
         }>(draftKey);
         if (draft) {
           setBillName(draft.billName);
@@ -101,15 +119,53 @@ const SplitBill = () => {
   const addItem = () => {
     const name = newItemName.trim();
     const price = parseFloat(newItemPrice);
-    if (!name) { toast.error("Isi nama item"); return; }
-    if (!price || price <= 0) { toast.error("Isi harga yang valid"); return; }
+    if (!name) {
+      toast.error("Isi nama item");
+      return;
+    }
+    if (!price || price <= 0) {
+      toast.error("Isi harga yang valid");
+      return;
+    }
     setItems((prev) => [...prev, { id: genId(), name, price }]);
     setNewItemName("");
     setNewItemPrice("");
     itemNameRef.current?.focus();
   };
 
-  const removeItem = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
+  const removeItem = (id: string) => {
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    if (editingId === id) setEditingId(null);
+  };
+
+  const startEditItem = (item: BillItem) => {
+    setEditingId(item.id);
+    setEditName(item.name);
+    setEditPrice(String(item.price));
+  };
+
+  const confirmEditItem = (id: string) => {
+    const name = editName.trim();
+    const price = parseFloat(editPrice);
+    if (!name) {
+      toast.error("Isi nama item");
+      return;
+    }
+    if (!price || price <= 0) {
+      toast.error("Isi harga yang valid");
+      return;
+    }
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, name, price } : i)));
+    setEditingId(null);
+    setEditName("");
+    setEditPrice("");
+  };
+
+  const cancelEditItem = () => {
+    setEditingId(null);
+    setEditName("");
+    setEditPrice("");
+  };
 
   const addPerson = (name: string) => setPersons((prev) => [...prev, { id: genId(), name }]);
   const removePerson = (id: string) => setPersons((prev) => prev.filter((p) => p.id !== id));
@@ -152,7 +208,8 @@ const SplitBill = () => {
 
   const shareToWhatsApp = () => {
     if (persons.length === 0 || calculation.base === 0) {
-      toast.error("Data kosong! Tambahkan data terlebih dahulu."); return;
+      toast.error("Data kosong! Tambahkan data terlebih dahulu.");
+      return;
     }
     const lines = [
       `🧾 Split Bill`,
@@ -168,8 +225,11 @@ const SplitBill = () => {
       "Patungan by Nexteam",
     ];
     const text = lines.filter((l) => l !== undefined).join("\n");
-    if (navigator.share) { navigator.share({ text }); }
-    else { window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank"); }
+    if (navigator.share) {
+      navigator.share({ text });
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    }
   };
 
   const copyAll = () => {
@@ -188,6 +248,24 @@ const SplitBill = () => {
     ];
     navigator.clipboard.writeText(lines.filter((l) => l !== undefined).join("\n"));
     toast.success("Ringkasan disalin!");
+  };
+
+  const exportToPDF = () => {
+    if (persons.length === 0 || calculation.base === 0) {
+      toast.error("Data kosong! Tambahkan item dan teman terlebih dahulu.");
+      return;
+    }
+
+    const receiptPersons: ReceiptPerson[] = persons.map((person) => ({
+      name: person.name,
+      items: items,
+      subtotal: calculation.base / persons.length,
+      serviceCharge: calculation.service / persons.length,
+      tax: calculation.tax / persons.length,
+      total: calculation.perPerson,
+    }));
+
+    exportElementToPDF(pdfRef.current!, `patungan-${billName || "split-bill"}.pdf`, billName || "Split Bill", receiptPersons);
   };
 
   return (
@@ -222,9 +300,7 @@ const SplitBill = () => {
           {/* Items section */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Item / Menu {items.length > 0 && <span className="text-primary">({items.length})</span>}
-              </label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Item / Menu {items.length > 0 && <span className="text-primary">({items.length})</span>}</label>
               <ReceiptScanner
                 mode="split"
                 onConfirm={(scanned) => {
@@ -245,11 +321,41 @@ const SplitBill = () => {
                   exit={{ opacity: 0, height: 0 }}
                   className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2"
                 >
-                  <span className="text-sm text-foreground flex-1 truncate">{item.name}</span>
-                  <span className="text-sm font-semibold text-primary mr-2">{formatRupiah(item.price)}</span>
-                  <button onClick={() => removeItem(item.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                    <X className="h-3.5 w-3.5" />
-                  </button>
+                  {editingId === item.id ? (
+                    <>
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="flex-1 min-w-0 rounded-lg border border-input bg-background px-2 py-1 text-sm outline-none ring-ring focus:ring-2 mr-2"
+                        placeholder="Nama item"
+                      />
+                      <input
+                        type="number"
+                        value={editPrice}
+                        onChange={(e) => setEditPrice(e.target.value)}
+                        className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-sm outline-none ring-ring focus:ring-2 mr-2"
+                        placeholder="Harga"
+                      />
+                      <button onClick={() => confirmEditItem(item.id)} className="text-primary hover:opacity-80 transition-opacity mr-1" title="Simpan">
+                        <Check className="h-4 w-4" />
+                      </button>
+                      <button onClick={cancelEditItem} className="text-muted-foreground hover:text-destructive transition-colors" title="Batal">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-sm text-foreground flex-1 truncate">{item.name}</span>
+                      <span className="text-sm font-semibold text-primary mr-2">{formatRupiah(item.price)}</span>
+                      <button onClick={() => startEditItem(item)} className="text-muted-foreground hover:text-primary transition-colors mr-1" title="Edit">
+                        <Edit2 className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={() => removeItem(item.id)} className="text-muted-foreground hover:text-destructive transition-colors" title="Hapus">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </>
+                  )}
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -273,10 +379,7 @@ const SplitBill = () => {
                 onKeyDown={(e) => e.key === "Enter" && addItem()}
                 className="w-28 rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none ring-ring focus:ring-2"
               />
-              <button
-                onClick={addItem}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-colors"
-              >
+              <button onClick={addItem} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-colors">
                 <Plus className="h-4 w-4" />
               </button>
             </div>
@@ -289,9 +392,7 @@ const SplitBill = () => {
               <span className="text-base font-bold text-foreground">{formatRupiah(itemsTotal)}</span>
             </div>
           )}
-          {items.length === 0 && (
-            <p className="text-xs text-muted-foreground">Tambahkan item untuk menghitung total otomatis</p>
-          )}
+          {items.length === 0 && <p className="text-xs text-muted-foreground">Tambahkan item untuk menghitung total otomatis</p>}
         </div>
 
         {/* People */}
@@ -310,8 +411,14 @@ const SplitBill = () => {
             </div>
             <div className="flex items-center gap-2">
               {enableService && (
-                <input type="number" min="0" placeholder="Rp Custom" value={customService} onChange={(e) => setCustomService(e.target.value)}
-                  className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none ring-ring focus:ring-2" />
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Rp Custom"
+                  value={customService}
+                  onChange={(e) => setCustomService(e.target.value)}
+                  className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none ring-ring focus:ring-2"
+                />
               )}
               <button onClick={() => setEnableService(!enableService)} className={`relative h-6 w-11 rounded-full transition-colors ${enableService ? "bg-primary" : "bg-muted"}`}>
                 <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-primary-foreground shadow transition-transform ${enableService ? "left-[22px]" : "left-0.5"}`} />
@@ -326,8 +433,14 @@ const SplitBill = () => {
             </div>
             <div className="flex items-center gap-2">
               {enableTax && (
-                <input type="number" min="0" placeholder="Rp Custom" value={customTax} onChange={(e) => setCustomTax(e.target.value)}
-                  className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none ring-ring focus:ring-2" />
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Rp Custom"
+                  value={customTax}
+                  onChange={(e) => setCustomTax(e.target.value)}
+                  className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none ring-ring focus:ring-2"
+                />
               )}
               <button onClick={() => setEnableTax(!enableTax)} className={`relative h-6 w-11 rounded-full transition-colors ${enableTax ? "bg-primary" : "bg-muted"}`}>
                 <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-primary-foreground shadow transition-transform ${enableTax ? "left-[22px]" : "left-0.5"}`} />
@@ -353,6 +466,10 @@ const SplitBill = () => {
                 <button onClick={copyAll} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <Share2 className="h-4 w-4" />
                   Salin Semua
+                </button>
+                <button onClick={exportToPDF} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <FileDown className="h-4 w-4" />
+                  Export PDF
                 </button>
                 {isMobile && (
                   <button onClick={shareToWhatsApp} className="flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 transition-colors">
@@ -387,6 +504,10 @@ const SplitBill = () => {
           </div>
         )}
       </div>
+
+      {/* Hidden container for PDF ref */}
+      <div ref={pdfRef} style={{ display: "none" }} />
+
       <Footer />
 
       <AlertDialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
@@ -400,7 +521,9 @@ const SplitBill = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-lg">Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={resetData} className="rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90">Hapus</AlertDialogAction>
+            <AlertDialogAction onClick={resetData} className="rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Hapus
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

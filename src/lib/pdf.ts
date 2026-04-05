@@ -10,8 +10,7 @@ export interface ReceiptPerson {
   total: number;
 }
 
-const rp = (n: number) =>
-  new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
+const rp = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
 
 function dashed(): HTMLElement {
   const el = document.createElement("div");
@@ -25,11 +24,7 @@ function solid(): HTMLElement {
   return el;
 }
 
-function row(
-  left: string,
-  right: string,
-  opts: { bold?: boolean; indent?: boolean; size?: number } = {}
-): HTMLElement {
+function row(left: string, right: string, opts: { bold?: boolean; indent?: boolean; size?: number; boldRight?: boolean } = {}): HTMLElement {
   const el = document.createElement("div");
   el.style.cssText = `
     display:flex;justify-content:space-between;align-items:baseline;
@@ -41,7 +36,7 @@ function row(
   l.style.cssText = "flex:1;word-break:break-word;";
   const r = document.createElement("span");
   r.textContent = right;
-  r.style.cssText = "white-space:nowrap;";
+  r.style.cssText = `white-space:nowrap;${opts.boldRight ? "font-weight:700;" : ""}`;
   el.appendChild(l);
   el.appendChild(r);
   return el;
@@ -60,12 +55,7 @@ function center(text: string, opts: { size?: number; bold?: boolean; mt?: number
   return el;
 }
 
-export function exportElementToPDF(
-  _element: HTMLElement,
-  filename = "patungan-receipt.pdf",
-  title = "Custom Split Bill",
-  persons: ReceiptPerson[] = []
-) {
+export function exportElementToPDF(_element: HTMLElement, filename = "patungan-receipt.pdf", title = "Custom Split Bill", persons: ReceiptPerson[] = []) {
   const now = new Date();
   const dateStr = now.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
   const timeStr = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
@@ -84,7 +74,7 @@ export function exportElementToPDF(
   struk.appendChild(center("by Nexteam", { size: 9, mb: 4 }));
   struk.appendChild(solid());
   struk.appendChild(center(title.toUpperCase(), { size: 11, bold: true, mt: 4, mb: 2 }));
-  struk.appendChild(center(`${dateStr}  ${timeStr}`, { size: 9, mb: 4 }));
+  struk.appendChild(center(`${dateStr}<br>${timeStr}`, { size: 9, mb: 4 }));
   struk.appendChild(solid());
 
   // ─ Per-person sections ─
@@ -108,7 +98,7 @@ export function exportElementToPDF(
     if (person.serviceCharge > 0) struk.appendChild(row("Service", rp(person.serviceCharge), { indent: true }));
     if (person.tax > 0) struk.appendChild(row("Pajak", rp(person.tax), { indent: true }));
     struk.appendChild(dashed());
-    struk.appendChild(row("TOTAL", rp(person.total), { bold: true }));
+    struk.appendChild(row("TOTAL", rp(person.total), { bold: true, boldRight: true }));
 
     if (idx < persons.length - 1) {
       const gap = document.createElement("div");
@@ -119,14 +109,11 @@ export function exportElementToPDF(
 
   // ─ Grand total ─
   struk.appendChild(solid());
-  struk.appendChild(row("GRAND TOTAL", rp(grandTotal), { bold: true, size: 12 }));
+  struk.appendChild(row("GRAND TOTAL", rp(grandTotal), { bold: true, boldRight: true, size: 12 }));
   struk.appendChild(solid());
 
   // ─ Footer ─
-  const footer = center(
-    `Terima kasih sudah pakai Patungan!<br><br>patungan.vercel.app<br><br>================================`,
-    { size: 9, mt: 10 }
-  );
+  const footer = center(`Terima kasih sudah pakai Patungan!<br><br>patungan.vercel.app<br><br>================================`, { size: 9, mt: 10 });
   footer.style.color = "#555";
   struk.appendChild(footer);
 
