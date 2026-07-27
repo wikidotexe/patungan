@@ -113,17 +113,38 @@ export function exportElementToPDF(_element: HTMLElement, filename = "patungan-r
   struk.appendChild(solid());
 
   // ─ Footer ─
-  const footer = center(`Terima kasih sudah pakai Patungan!<br><br>patungan.vercel.app<br><br>================================`, { size: 9, mt: 10 });
+  const footer = center(`Terima kasih sudah pakai Patungan!<br><br>patungan.fornexteam.com<br><br>================================`, { size: 9, mt: 10 });
   footer.style.color = "#555";
   struk.appendChild(footer);
 
-  // ── PDF options: narrow roll width (72mm ≈ 2.83in) ─────────────────────────
+  // ── Ukur tinggi konten di off-screen agar PDF pas dengan isi ───────────────
+  // Lebar PDF: 3.15in = 302.4px (@96dpi). Kurangi margin 2 * 0.1in = 19.2px.
+  // Sisa area = ~283px, sesuai dengan lebar struk (272px + padding).
+  const PDF_WIDTH_IN = 3.15;
+  const MARGIN_IN = 0.1;
+
+  const measurer = document.createElement("div");
+  measurer.style.cssText = `
+    position:fixed;left:-99999px;top:0;visibility:hidden;
+    width:${(PDF_WIDTH_IN - MARGIN_IN * 2) * 96}px;
+  `;
+  measurer.appendChild(struk);
+  document.body.appendChild(measurer);
+
+  // Tinggi struk (px) → inch (@96dpi) + tambahan margin atas/bawah + buffer kecil
+  const strukHeightPx = struk.getBoundingClientRect().height;
+  const strukHeightIn = strukHeightPx / 96;
+  const pdfHeightIn = Math.max(2, strukHeightIn + MARGIN_IN * 2 + 0.05);
+
+  document.body.removeChild(measurer);
+
+  // ── PDF options: narrow roll width + tinggi dinamis ────────────────────────
   const opt = {
-    margin: [0.1, 0.1],
+    margin: [MARGIN_IN, MARGIN_IN],
     filename,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 3, useCORS: true, backgroundColor: "#ffffff" },
-    jsPDF: { unit: "in", format: [3.15, 14], orientation: "portrait" },
+    jsPDF: { unit: "in", format: [PDF_WIDTH_IN, pdfHeightIn], orientation: "portrait" },
   };
 
   const fn = html2pdf && (html2pdf as any).default ? (html2pdf as any).default : html2pdf;
