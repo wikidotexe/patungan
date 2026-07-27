@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    <url>
+        <loc>https://patungan.fornexteam.com/</loc>
+        <xhtml:link rel="alternate" href="https://patunganbayar.fornexteam.com/" />
+        <xhtml:link rel="alternate" href="https://patunganbayar.vercel.app/" />
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+    </url>
+    <url>
+        <loc>https://patungan.fornexteam.com/split-bill</loc>
+        <xhtml:link rel="alternate" href="https://patunganbayar.fornexteam.com/split-bill" />
+        <xhtml:link rel="alternate" href="https://patunganbayar.vercel.app/split-bill" />
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://patungan.fornexteam.com/custom-split</loc>
+        <xhtml:link rel="alternate" href="https://patunganbayar.fornexteam.com/custom-split" />
+        <xhtml:link rel="alternate" href="https://patunganbayar.vercel.app/custom-split" />
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://patungan.fornexteam.com/notes</loc>
+        <xhtml:link rel="alternate" href="https://patunganbayar.fornexteam.com/notes" />
+        <xhtml:link rel="alternate" href="https://patunganbayar.vercel.app/notes" />
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+</urlset>

@@ -84,14 +84,19 @@ const Index = () => {
 
   // Load data: compare localStorage timestamp vs Supabase updated_at, use whichever is newer
   useEffect(() => {
-    if (!initialTitle) { setIsLoading(false); return; }
+    if (!initialTitle) {
+      setIsLoading(false);
+      return;
+    }
 
     const loadData = async () => {
       // Read localStorage draft first (synchronous)
       const draft = localDraft.get<{
         persons: PersonWithItems[];
-        enableService: boolean; enableTax: boolean;
-        customService: string; customTax: string;
+        enableService: boolean;
+        enableTax: boolean;
+        customService: string;
+        customTax: string;
         savedAt: number;
       }>(draftKey);
 
@@ -102,9 +107,7 @@ const Index = () => {
         const personMapped = people.map((p) => ({
           id: p.person_id,
           name: p.person_name,
-          items: items
-            .filter((item) => item.assignedTo.includes(p.person_id))
-            .map((item) => ({ id: item.item_id, name: item.item_name, price: item.item_price })),
+          items: items.filter((item) => item.assignedTo.includes(p.person_id)).map((item) => ({ id: item.item_id, name: item.item_name, price: item.item_price })),
         }));
 
         // Compare timestamps: prefer whichever was written more recently
@@ -158,14 +161,22 @@ const Index = () => {
       for (const person of currentPersons) {
         for (const item of person.items) {
           const existing = items.find((i) => i.id === item.id);
-          if (existing) { existing.assignedTo.push(person.id); }
-          else { items.push({ id: item.id, name: item.name, price: item.price, assignedTo: [person.id] }); }
+          if (existing) {
+            existing.assignedTo.push(person.id);
+          } else {
+            items.push({ id: item.id, name: item.name, price: item.price, assignedTo: [person.id] });
+          }
         }
       }
       await saveCustomBillToSupabase(
         splitTitle,
         currentPersons.map((p) => ({ id: p.id, name: p.name })),
-        items, currentEnableService, currentEnableTax, currentCustomService, currentCustomTax, userEmail,
+        items,
+        currentEnableService,
+        currentEnableTax,
+        currentCustomService,
+        currentCustomTax,
+        userEmail,
       );
     };
 
@@ -234,7 +245,11 @@ const Index = () => {
     const bills = await getAllBillsFromSupabase(userEmail);
     // Only show bills that have items
     const withItems = bills.filter((b) => {
-      try { return JSON.parse(b.items_json || "[]").length > 0; } catch { return false; }
+      try {
+        return JSON.parse(b.items_json || "[]").length > 0;
+      } catch {
+        return false;
+      }
     });
     setImportBills(withItems);
     setImportLoading(false);
@@ -243,7 +258,11 @@ const Index = () => {
   // Import a split bill: divide its total equally among all persons
   const importSharing = (bill: Bill) => {
     const items: Array<{ name: string; price: number }> = (() => {
-      try { return JSON.parse(bill.items_json || "[]"); } catch { return []; }
+      try {
+        return JSON.parse(bill.items_json || "[]");
+      } catch {
+        return [];
+      }
     })();
     const itemsTotal = items.reduce((s: number, i: any) => s + (i.price || 0), 0);
     if (!itemsTotal || persons.length === 0) {
@@ -256,7 +275,7 @@ const Index = () => {
       prev.map((p) => ({
         ...p,
         items: [...p.items, { id: genId(), name: label, price: perPerson }],
-      }))
+      })),
     );
     setImportModal(false);
     toast.success(`Import sharing berhasil! ${formatRupiah(perPerson)}/orang`);
@@ -332,30 +351,34 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className="w-full max-w-xl mx-auto px-2 md:px-4 py-8 space-y-6 flex-1">
+      <div className="w-full max-w-xl mx-auto px-2 md:px-4 py-3 sm:py-8 space-y-3 sm:space-y-6 flex-1">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="flex h-9 w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="h-4 w-4" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link to="/" className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Link>
-            <h1 className="text-xl font-bold text-foreground">{splitTitle || "Custom Split Bill"}</h1>
+            <h1 className="text-base sm:text-xl font-bold text-foreground truncate">{splitTitle || "Custom Split Bill"}</h1>
           </div>
-          <button onClick={() => setResetConfirmOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-destructive transition-colors" title="Hapus Data">
-            <Trash2 className="h-4 w-4" />
+          <button
+            onClick={() => setResetConfirmOpen(true)}
+            className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-destructive transition-colors shrink-0"
+            title="Hapus Data"
+          >
+            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
         </div>
 
         {/* People */}
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
           <PeopleSection persons={persons} onAdd={addPerson} onRemove={removePerson} />
         </div>
 
         {/* Per-person items */}
         {persons.length > 0 && (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Item per Teman</h2>
+              <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground">Item per Teman</h2>
               <div className="flex items-center gap-2">
                 <ReceiptScanner
                   mode="custom"
@@ -367,10 +390,7 @@ const Index = () => {
                     toast.success(`${scanned.length} item ditambahkan dari struk`);
                   }}
                 />
-                <button
-                  onClick={openImportModal}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 rounded-lg px-3 py-1.5 transition-colors"
-                >
+                <button onClick={openImportModal} className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 rounded-lg px-3 py-1.5 transition-colors">
                   <Plus className="h-3.5 w-3.5" />
                   Import Sharing
                 </button>
@@ -389,12 +409,12 @@ const Index = () => {
         )}
 
         {/* Tax & Service */}
-        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <div className="rounded-xl border border-border bg-card p-3 sm:p-4 space-y-2.5 sm:space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pajak & Service</h2>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-foreground">Service Charge {SERVICE_CHARGE_RATE * 100}%</p>
-              <p className="text-xs text-muted-foreground">{enableService ? (customService ? `custom: ${formatRupiah(Number(customService))}` : "otomatis") : "nonaktif"}</p>
+              <p className="text-xs sm:text-sm font-semibold text-foreground">Service Charge {SERVICE_CHARGE_RATE * 100}%</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">{enableService ? (customService ? `custom: ${formatRupiah(Number(customService))}` : "otomatis") : "nonaktif"}</p>
             </div>
             <div className="flex items-center gap-2">
               {enableService && (
@@ -404,18 +424,18 @@ const Index = () => {
                   placeholder="Rp Custom"
                   value={customService}
                   onChange={(e) => setCustomService(e.target.value)}
-                  className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none ring-ring focus:ring-2"
+                  className="w-20 sm:w-24 rounded-lg border border-input bg-background px-2 py-1 text-[10px] sm:text-xs outline-none ring-ring focus:ring-2"
                 />
               )}
-              <button onClick={() => setEnableService(!enableService)} className={`relative h-6 w-11 rounded-full transition-colors ${enableService ? "bg-primary" : "bg-muted"}`}>
-                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-primary-foreground shadow transition-transform ${enableService ? "left-[22px]" : "left-0.5"}`} />
+              <button onClick={() => setEnableService(!enableService)} className={`relative h-5 w-9 sm:h-6 sm:w-11 rounded-full transition-colors ${enableService ? "bg-primary" : "bg-muted"}`}>
+                <span className={`absolute top-0.5 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-primary-foreground shadow transition-transform ${enableService ? "left-[18px] sm:left-[22px]" : "left-0.5"}`} />
               </button>
             </div>
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-foreground">PB1 / Pajak {TAX_RATE * 100}%</p>
-              <p className="text-xs text-muted-foreground">{enableTax ? (customTax ? `custom: ${formatRupiah(Number(customTax))}` : "otomatis") : "nonaktif"}</p>
+              <p className="text-xs sm:text-sm font-semibold text-foreground">PB1 / Pajak {TAX_RATE * 100}%</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">{enableTax ? (customTax ? `custom: ${formatRupiah(Number(customTax))}` : "otomatis") : "nonaktif"}</p>
             </div>
             <div className="flex items-center gap-2">
               {enableTax && (
@@ -425,18 +445,18 @@ const Index = () => {
                   placeholder="Rp Custom"
                   value={customTax}
                   onChange={(e) => setCustomTax(e.target.value)}
-                  className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none ring-ring focus:ring-2"
+                  className="w-20 sm:w-24 rounded-lg border border-input bg-background px-2 py-1 text-[10px] sm:text-xs outline-none ring-ring focus:ring-2"
                 />
               )}
-              <button onClick={() => setEnableTax(!enableTax)} className={`relative h-6 w-11 rounded-full transition-colors ${enableTax ? "bg-primary" : "bg-muted"}`}>
-                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-primary-foreground shadow transition-transform ${enableTax ? "left-[22px]" : "left-0.5"}`} />
+              <button onClick={() => setEnableTax(!enableTax)} className={`relative h-5 w-9 sm:h-6 sm:w-11 rounded-full transition-colors ${enableTax ? "bg-primary" : "bg-muted"}`}>
+                <span className={`absolute top-0.5 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-primary-foreground shadow transition-transform ${enableTax ? "left-[18px] sm:left-[22px]" : "left-0.5"}`} />
               </button>
             </div>
           </div>
           <p className="text-[10px] text-muted-foreground italic mt-1 font-medium">* Pajak dan service, di bagi rata ke semua teman</p>
-          <div className="border-t border-border pt-3 flex justify-between items-center">
-            <span className="font-semibold text-foreground">Total</span>
-            <span className="text-lg font-bold text-primary">{formatRupiah(totalBill)}</span>
+          <div className="border-t border-border pt-2.5 sm:pt-3 flex justify-between items-center">
+            <span className="font-semibold text-foreground text-sm sm:text-base">Total</span>
+            <span className="text-base sm:text-lg font-bold text-primary">{formatRupiah(totalBill)}</span>
           </div>
         </div>
 
@@ -470,12 +490,7 @@ const Index = () => {
                         tax: s.tax,
                         total: s.total,
                       }));
-                      exportElementToPDF(
-                        pdfRef.current!,
-                        `patungan-${splitTitle || "receipt"}.pdf`,
-                        splitTitle || "Custom Split Bill",
-                        receiptPersons
-                      );
+                      exportElementToPDF(pdfRef.current!, `patungan-${splitTitle || "receipt"}.pdf`, splitTitle || "Custom Split Bill", receiptPersons);
                     }}
                     className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
@@ -564,13 +579,7 @@ const Index = () => {
       {/* Import Sharing Modal */}
       <AnimatePresence>
         {importModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 pb-4 sm:pb-0"
-            onClick={() => setImportModal(false)}
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 pb-4 sm:pb-0" onClick={() => setImportModal(false)}>
             <motion.div
               initial={{ y: 40, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -602,20 +611,22 @@ const Index = () => {
                 ) : (
                   importBills.map((bill) => {
                     const items: Array<{ name: string; price: number }> = (() => {
-                      try { return JSON.parse(bill.items_json || "[]"); } catch { return []; }
+                      try {
+                        return JSON.parse(bill.items_json || "[]");
+                      } catch {
+                        return [];
+                      }
                     })();
                     const total = items.reduce((s, i) => s + (i.price || 0), 0);
                     const perPerson = persons.length > 0 ? Math.round(total / persons.length) : 0;
                     return (
-                      <button
-                        key={bill.id}
-                        onClick={() => importSharing(bill)}
-                        className="w-full text-left rounded-xl border border-border bg-background hover:border-primary/50 hover:bg-primary/5 px-4 py-3 transition-colors"
-                      >
+                      <button key={bill.id} onClick={() => importSharing(bill)} className="w-full text-left rounded-xl border border-border bg-background hover:border-primary/50 hover:bg-primary/5 px-4 py-3 transition-colors">
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="font-semibold text-foreground text-sm">{bill.bill_name || bill.title}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">{items.length} item · Total {formatRupiah(total)}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {items.length} item · Total {formatRupiah(total)}
+                            </p>
                           </div>
                           <div className="text-right">
                             <p className="text-xs text-muted-foreground">per orang</p>
@@ -649,7 +660,7 @@ const Index = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div >
+    </div>
   );
 };
 
@@ -700,15 +711,15 @@ function PersonItemCard({
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       {/* Collapsible Header */}
-      <button onClick={() => setCollapsed(!collapsed)} className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/30 transition-colors">
+      <button onClick={() => setCollapsed(!collapsed)} className="w-full flex items-center justify-between p-3 sm:p-4 text-left hover:bg-muted/30 transition-colors">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-foreground">{person.name}</h3>
-          {person.items.length > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/10 px-1.5 text-[10px] font-bold text-primary">{person.items.length}</span>}
+          <h3 className="font-semibold text-foreground text-sm sm:text-base">{person.name}</h3>
+          {person.items.length > 0 && <span className="flex h-4 min-w-4 sm:h-5 sm:min-w-5 items-center justify-center rounded-full bg-primary/10 px-1.5 text-[10px] font-bold text-primary">{person.items.length}</span>}
         </div>
         <div className="flex items-center gap-2">
-          {person.items.length > 0 && <span className="text-xs font-medium text-primary">{formatRupiah(itemTotal)}</span>}
+          {person.items.length > 0 && <span className="text-[11px] sm:text-xs font-medium text-primary">{formatRupiah(itemTotal)}</span>}
           <motion.div animate={{ rotate: collapsed ? -90 : 0 }} transition={{ duration: 0.2 }}>
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <ChevronDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </motion.div>
         </div>
       </button>
@@ -717,7 +728,7 @@ function PersonItemCard({
       <AnimatePresence initial={false}>
         {!collapsed && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: "easeInOut" }} className="overflow-hidden">
-            <div className="px-4 pt-1 pb-4 space-y-3">
+            <div className="px-3 pt-1 pb-3 sm:px-4 sm:pb-4 space-y-2 sm:space-y-3">
               <div className="flex flex-wrap gap-2">
                 <input
                   type="text"

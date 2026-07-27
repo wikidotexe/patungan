@@ -64,7 +64,7 @@ const features = [
   { icon: Wallet, label: "Data tersimpan di cloud" },
   { icon: Moon, label: "Dark mode tersedia" },
   { icon: StickyNote, label: "Catatan untuk trip & belanja" },
-  { icon: Sparkles, label: "AI Assistant (Gemini 2.5)" },
+  { icon: Sparkles, label: "AI Assistant" },
   { icon: Settings, label: "Pengaturan di tombol ⚙️" },
 ];
 

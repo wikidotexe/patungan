@@ -270,22 +270,26 @@ const SplitBill = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-xl px-4 py-8 space-y-6">
+      <div className="mx-auto max-w-xl px-3 py-5 sm:px-4 sm:py-8 space-y-5 sm:space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="flex h-9 w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="h-4 w-4" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link to="/" className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Link>
-            <h1 className="text-xl font-bold text-foreground">Split Bill</h1>
+            <h1 className="text-base sm:text-xl font-bold text-foreground">Split Bill</h1>
           </div>
-          <button onClick={() => setResetConfirmOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-destructive transition-colors" title="Hapus Data">
-            <Trash2 className="h-4 w-4" />
+          <button
+            onClick={() => setResetConfirmOpen(true)}
+            className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-destructive transition-colors"
+            title="Hapus Data"
+          >
+            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
         </div>
 
         {/* Bill Info */}
-        <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+        <div className="rounded-xl border border-border bg-card p-3 sm:p-4 space-y-3 sm:space-y-4">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nama Tagihan</label>
             <input
@@ -293,7 +297,7 @@ const SplitBill = () => {
               placeholder="Contoh: Makan Siang"
               value={billName}
               onChange={(e) => setBillName(e.target.value)}
-              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none ring-ring focus:ring-2"
+              className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 sm:px-3 sm:py-2.5 text-xs sm:text-sm outline-none ring-ring focus:ring-2"
             />
           </div>
 
@@ -361,7 +365,7 @@ const SplitBill = () => {
             </AnimatePresence>
 
             {/* Add item row */}
-            <div className="flex gap-2">
+            <div className="flex gap-1.5 sm:gap-2">
               <input
                 ref={itemNameRef}
                 type="text"
@@ -369,7 +373,7 @@ const SplitBill = () => {
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addItem()}
-                className="flex-1 min-w-0 rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none ring-ring focus:ring-2"
+                className="flex-1 min-w-0 rounded-lg border border-input bg-background px-2.5 py-1.5 sm:px-3 sm:py-2.5 text-xs sm:text-sm outline-none ring-ring focus:ring-2"
               />
               <input
                 type="number"
@@ -377,10 +381,10 @@ const SplitBill = () => {
                 value={newItemPrice}
                 onChange={(e) => setNewItemPrice(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addItem()}
-                className="w-28 rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none ring-ring focus:ring-2"
+                className="w-24 sm:w-28 rounded-lg border border-input bg-background px-2.5 py-1.5 sm:px-3 sm:py-2.5 text-xs sm:text-sm outline-none ring-ring focus:ring-2"
               />
-              <button onClick={addItem} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-colors">
-                <Plus className="h-4 w-4" />
+              <button onClick={addItem} className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-colors">
+                <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </button>
             </div>
           </div>
@@ -396,18 +400,18 @@ const SplitBill = () => {
         </div>
 
         {/* People */}
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
           <PeopleSection persons={persons} onAdd={addPerson} onRemove={removePerson} />
         </div>
 
         {/* Tax & Service */}
-        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <div className="rounded-xl border border-border bg-card p-3 sm:p-4 space-y-2.5 sm:space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pajak & Service</h2>
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-foreground">Service Charge {SERVICE_CHARGE_RATE * 100}%</p>
-              <p className="text-xs text-muted-foreground">{enableService ? (customService ? `custom: ${formatRupiah(Number(customService))}` : formatRupiah(calculation.service)) : formatRupiah(0)}</p>
+              <p className="text-xs sm:text-sm font-semibold text-foreground">Service Charge {SERVICE_CHARGE_RATE * 100}%</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">{enableService ? (customService ? `custom: ${formatRupiah(Number(customService))}` : formatRupiah(calculation.service)) : formatRupiah(0)}</p>
             </div>
             <div className="flex items-center gap-2">
               {enableService && (
@@ -417,19 +421,19 @@ const SplitBill = () => {
                   placeholder="Rp Custom"
                   value={customService}
                   onChange={(e) => setCustomService(e.target.value)}
-                  className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none ring-ring focus:ring-2"
+                  className="w-20 sm:w-24 rounded-lg border border-input bg-background px-2 py-1 text-[10px] sm:text-xs outline-none ring-ring focus:ring-2"
                 />
               )}
-              <button onClick={() => setEnableService(!enableService)} className={`relative h-6 w-11 rounded-full transition-colors ${enableService ? "bg-primary" : "bg-muted"}`}>
-                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-primary-foreground shadow transition-transform ${enableService ? "left-[22px]" : "left-0.5"}`} />
+              <button onClick={() => setEnableService(!enableService)} className={`relative h-5 w-9 sm:h-6 sm:w-11 rounded-full transition-colors ${enableService ? "bg-primary" : "bg-muted"}`}>
+                <span className={`absolute top-0.5 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-primary-foreground shadow transition-transform ${enableService ? "left-[18px] sm:left-[22px]" : "left-0.5"}`} />
               </button>
             </div>
           </div>
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-foreground">PB1 / Pajak {TAX_RATE * 100}%</p>
-              <p className="text-xs text-muted-foreground">{enableTax ? (customTax ? `custom: ${formatRupiah(Number(customTax))}` : formatRupiah(calculation.tax)) : formatRupiah(0)}</p>
+              <p className="text-xs sm:text-sm font-semibold text-foreground">PB1 / Pajak {TAX_RATE * 100}%</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">{enableTax ? (customTax ? `custom: ${formatRupiah(Number(customTax))}` : formatRupiah(calculation.tax)) : formatRupiah(0)}</p>
             </div>
             <div className="flex items-center gap-2">
               {enableTax && (
@@ -439,24 +443,24 @@ const SplitBill = () => {
                   placeholder="Rp Custom"
                   value={customTax}
                   onChange={(e) => setCustomTax(e.target.value)}
-                  className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none ring-ring focus:ring-2"
+                  className="w-20 sm:w-24 rounded-lg border border-input bg-background px-2 py-1 text-[10px] sm:text-xs outline-none ring-ring focus:ring-2"
                 />
               )}
-              <button onClick={() => setEnableTax(!enableTax)} className={`relative h-6 w-11 rounded-full transition-colors ${enableTax ? "bg-primary" : "bg-muted"}`}>
-                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-primary-foreground shadow transition-transform ${enableTax ? "left-[22px]" : "left-0.5"}`} />
+              <button onClick={() => setEnableTax(!enableTax)} className={`relative h-5 w-9 sm:h-6 sm:w-11 rounded-full transition-colors ${enableTax ? "bg-primary" : "bg-muted"}`}>
+                <span className={`absolute top-0.5 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-primary-foreground shadow transition-transform ${enableTax ? "left-[18px] sm:left-[22px]" : "left-0.5"}`} />
               </button>
             </div>
           </div>
           <p className="text-[10px] text-muted-foreground italic mt-1 font-medium">* Pajak dan service, di bagi rata ke semua teman</p>
-          <div className="border-t border-border pt-3 flex justify-between items-center">
-            <span className="font-semibold text-foreground">Total</span>
-            <span className="text-lg font-bold text-primary">{formatRupiah(calculation.total)}</span>
+          <div className="border-t border-border pt-2.5 sm:pt-3 flex justify-between items-center">
+            <span className="font-semibold text-foreground text-sm sm:text-base">Total</span>
+            <span className="text-base sm:text-lg font-bold text-primary">{formatRupiah(calculation.total)}</span>
           </div>
         </div>
 
         {/* Results */}
         {persons.length > 0 && calculation.base > 0 && (
-          <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+          <div className="rounded-xl border border-border bg-card p-3 sm:p-4 space-y-3 sm:space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-primary" />

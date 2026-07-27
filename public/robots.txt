@@ -12,3 +12,7 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://patungan.fornexteam.com/sitemap.xml
+Sitemap: https://patunganbayar.vercel.app/sitemap.xml
+Host: https://patungan.fornexteam.com

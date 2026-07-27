@@ -2,7 +2,6 @@ import { useRef, useState, useEffect } from "react";
 import { Camera, Image, Loader2, Check, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { formatRupiah, type Person } from "@/lib/bill";
 
 interface ScannedItem {
@@ -57,9 +56,11 @@ export const ReceiptScanner = (props: ReceiptScannerProps) => {
   }, [openDropdown]);
 
   const processFile = async (file: File) => {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY?.trim();
-    if (!apiKey || apiKey === "your_api_key_here") {
-      toast.error("Gemini API Key belum dikonfigurasi!");
+    const apiKey = import.meta.env.VITE_AI_API_KEY?.trim();
+    const endpoint = import.meta.env.VITE_AI_API_ENDPOINT?.trim();
+    const modelName = import.meta.env.VITE_AI_MODEL?.trim() || "free-forever";
+    if (!apiKey || apiKey === "your_api_key_here" || !endpoint) {
+      toast.error("AI API belum dikonfigurasi!");
       return;
     }
 
@@ -75,9 +76,7 @@ export const ReceiptScanner = (props: ReceiptScannerProps) => {
       });
 
       const mimeType = file.type || "image/jpeg";
-
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+      const dataUrl = `data:${mimeType};base64,${base64}`;
 
       const prompt = `Kamu adalah asisten untuk mengekstrak data dari struk/bon/nota pembayaran.
 Ekstrak semua item beserta harganya dari gambar struk ini.
@@ -86,9 +85,35 @@ Harga harus berupa angka integer dalam Rupiah, tanpa titik atau koma pemisah rib
 Jangan sertakan pajak, service charge, diskon, atau total keseluruhan — hanya item individual.
 Jika tidak ada item yang terdeteksi, kembalikan [].`;
 
-      const result = await model.generateContent([{ inlineData: { data: base64, mimeType } }, prompt]);
+      const payload = {
+        model: modelName,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              { type: "image_url", image_url: { url: dataUrl } },
+            ],
+          },
+        ],
+      };
 
-      let text = result.response.text().trim();
+      const res = await fetch(`${endpoint.replace(/\/$/, "")}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errText}`);
+      }
+
+      const data = await res.json();
+      let text: string = (data?.choices?.[0]?.message?.content ?? "").trim();
       const fenceMatch = text.match(/```(?:json)?\n?([\s\S]*?)\n?```/);
       if (fenceMatch) text = fenceMatch[1].trim();
 
@@ -292,13 +317,16 @@ Jika tidak ada item yang terdeteksi, kembalikan [].`;
                               : "Pilih..."}
                           </button>
                           {openDropdown?.itemId === item.id && (
-                            <div className="absolute top-full right-0 mt-1 w-40 sm:w-48 bg-card border border-border rounded-lg shadow-lg z-20 p-1.5 sm:p-2 space-y-0.5 sm:space-y-1 max-h-48 overflow-y-auto">
-                              {(props as CustomProps).persons.map((person) => (
-                                <label key={person.id} className="flex items-center gap-2 p-1.5 sm:p-2 hover:bg-muted rounded cursor-pointer" onClick={(e) => e.stopPropagation()}>
-                                  <input type="checkbox" checked={item.personIds.includes(person.id)} onChange={() => togglePerson(item.id, person.id)} className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                  <span className="text-xs sm:text-sm truncate">{person.name}</span>
-                                </label>
-                              ))}
+                            <div className="absolute top-full right-0 mt-1 w-40 sm:w-48 bg-card border border-border rounded-lg shadow-lg z-20 overflow-hidden">
+                              <div className="p-1.5 sm:p-2 space-y-0.5 sm:space-y-1 max-h-48 overflow-y-auto">
+                                {(props as CustomProps).persons.map((person) => (
+                                  <label key={person.id} className="flex items-center gap-2 p-1.5 sm:p-2 hover:bg-muted rounded cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                                    <input type="checkbox" checked={item.personIds.includes(person.id)} onChange={() => togglePerson(item.id, person.id)} className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                    <span className="text-xs sm:text-sm truncate">{person.name}</span>
+                                  </label>
+                                ))}
+                              </div>
+                              {(props as CustomProps).persons.length > 4 && <div className="border-t border-border bg-muted/40 px-2 py-1 text-[10px] text-muted-foreground text-center italic">Scroll untuk melihat penerima lain</div>}
                             </div>
                           )}
                         </div>

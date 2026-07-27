@@ -11,6 +11,14 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
+    proxy: {
+      "/ai-proxy": {
+        target: "https://9router.nexteam.web.id",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/ai-proxy/, ""),
+      },
+    },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {

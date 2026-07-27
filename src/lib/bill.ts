@@ -24,18 +24,15 @@ export const TAX_RATE = 0.1; // PB1 10%
 export const SERVICE_CHARGE_RATE = 0.05; // 5%
 
 export function formatRupiah(amount: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
 }
 
-export function calculateSummaries(
-  persons: Person[],
-  items: BillItem[]
-): BillSummary[] {
+export function calculateSummaries(persons: Person[], items: BillItem[]): BillSummary[] {
   return persons.map((person) => {
     const personItems: { name: string; amount: number }[] = [];
 

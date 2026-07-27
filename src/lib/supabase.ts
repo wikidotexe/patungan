@@ -63,21 +63,11 @@ export interface CustomBillItem {
 // Simple Split Bill Functions
 export async function loadBillFromSupabase(title: string, userEmail: string) {
   try {
-    let { data: bill, error: billError } = await supabase
-      .from("bills")
-      .select("*")
-      .eq("title", title)
-      .eq("user_email", userEmail)
-      .single();
+    let { data: bill, error: billError } = await supabase.from("bills").select("*").eq("title", title).eq("user_email", userEmail).single();
 
     // Fallback: try legacy data with empty user_email, then migrate
     if (billError || !bill) {
-      const { data: legacyBill } = await supabase
-        .from("bills")
-        .select("*")
-        .eq("title", title)
-        .eq("user_email", "")
-        .maybeSingle();
+      const { data: legacyBill } = await supabase.from("bills").select("*").eq("title", title).eq("user_email", "").maybeSingle();
       if (legacyBill) {
         await supabase.from("bills").update({ user_email: userEmail }).eq("id", legacyBill.id);
         bill = { ...legacyBill, user_email: userEmail };
@@ -89,7 +79,10 @@ export async function loadBillFromSupabase(title: string, userEmail: string) {
     }
 
     const { data: people, error: peopleError } = await supabase.from("bill_people").select("*").eq("bill_id", bill.id);
-    if (peopleError) { console.error("❌ Error loading people:", peopleError); return null; }
+    if (peopleError) {
+      console.error("❌ Error loading people:", peopleError);
+      return null;
+    }
     return { bill, people: people || [] };
   } catch (error) {
     console.error("❌ Error in loadBillFromSupabase:", error);
@@ -98,19 +91,19 @@ export async function loadBillFromSupabase(title: string, userEmail: string) {
 }
 
 export async function saveBillToSupabase(
-  title: string, billName: string, totalBill: string,
+  title: string,
+  billName: string,
+  totalBill: string,
   persons: Array<{ id: string; name: string }>,
-  enableService: boolean, enableTax: boolean,
-  customService: string, customTax: string, userEmail: string,
-  items: Array<{ id: string; name: string; price: number }> = []
+  enableService: boolean,
+  enableTax: boolean,
+  customService: string,
+  customTax: string,
+  userEmail: string,
+  items: Array<{ id: string; name: string; price: number }> = [],
 ) {
   try {
-    const { data: existingBill } = await supabase
-      .from("bills")
-      .select("id")
-      .eq("title", title)
-      .eq("user_email", userEmail)
-      .maybeSingle();
+    const { data: existingBill } = await supabase.from("bills").select("id").eq("title", title).eq("user_email", userEmail).maybeSingle();
 
     let bill;
     let billError;
@@ -162,9 +155,7 @@ export async function saveBillToSupabase(
     if (deleteError) console.warn("⚠️ Warning deleting old people:", deleteError);
 
     if (persons.length > 0) {
-      const { error: peopleError } = await supabase.from("bill_people").insert(
-        persons.map((p) => ({ bill_id: bill.id, person_id: p.id, person_name: p.name })),
-      );
+      const { error: peopleError } = await supabase.from("bill_people").insert(persons.map((p) => ({ bill_id: bill.id, person_id: p.id, person_name: p.name })));
       if (peopleError) {
         console.error("❌ Error saving people:", peopleError);
         return false;
@@ -180,12 +171,7 @@ export async function saveBillToSupabase(
 
 export async function deleteBillFromSupabase(title: string, userEmail: string) {
   try {
-    const { data: bill } = await supabase
-      .from("bills")
-      .select("id")
-      .eq("title", title)
-      .eq("user_email", userEmail)
-      .single();
+    const { data: bill } = await supabase.from("bills").select("id").eq("title", title).eq("user_email", userEmail).single();
 
     if (!bill) return false;
     const { error } = await supabase.from("bills").delete().eq("id", bill.id);
@@ -199,21 +185,11 @@ export async function deleteBillFromSupabase(title: string, userEmail: string) {
 // Custom Split Bill Functions
 export async function loadCustomBillFromSupabase(title: string, userEmail: string) {
   try {
-    let { data: bill, error: billError } = await supabase
-      .from("custom_bills")
-      .select("*")
-      .eq("title", title)
-      .eq("user_email", userEmail)
-      .single();
+    let { data: bill, error: billError } = await supabase.from("custom_bills").select("*").eq("title", title).eq("user_email", userEmail).single();
 
     // Fallback: try legacy data with empty user_email, then migrate
     if (billError || !bill) {
-      const { data: legacyBill } = await supabase
-        .from("custom_bills")
-        .select("*")
-        .eq("title", title)
-        .eq("user_email", "")
-        .maybeSingle();
+      const { data: legacyBill } = await supabase.from("custom_bills").select("*").eq("title", title).eq("user_email", "").maybeSingle();
       if (legacyBill) {
         await supabase.from("custom_bills").update({ user_email: userEmail }).eq("id", legacyBill.id);
         bill = { ...legacyBill, user_email: userEmail };
@@ -223,7 +199,6 @@ export async function loadCustomBillFromSupabase(title: string, userEmail: strin
         return null;
       }
     }
-
 
     const [{ data: people }, { data: items }] = await Promise.all([
       supabase.from("custom_bill_people").select("*").eq("custom_bill_id", bill.id),
@@ -242,7 +217,6 @@ export async function loadCustomBillFromSupabase(title: string, userEmail: strin
         )
         .eq("custom_bill_id", bill.id),
     ]);
-
 
     return {
       bill,
@@ -270,12 +244,7 @@ export async function saveCustomBillToSupabase(
   userEmail: string,
 ) {
   try {
-    const { data: existingBill } = await supabase
-      .from("custom_bills")
-      .select("id")
-      .eq("title", title)
-      .eq("user_email", userEmail)
-      .maybeSingle();
+    const { data: existingBill } = await supabase.from("custom_bills").select("id").eq("title", title).eq("user_email", userEmail).maybeSingle();
 
     let bill;
     let billError;
@@ -314,31 +283,28 @@ export async function saveCustomBillToSupabase(
       billError = insertError;
     }
 
-    if (!bill) { console.error("❌ Failed to upsert custom bill"); return false; }
+    if (!bill) {
+      console.error("❌ Failed to upsert custom bill");
+      return false;
+    }
 
     // ─ 2. Diff-based people sync — NEVER delete all ─────────────────────────
-    const { data: existingPeople } = await supabase
-      .from("custom_bill_people").select("person_id").eq("custom_bill_id", bill.id);
+    const { data: existingPeople } = await supabase.from("custom_bill_people").select("person_id").eq("custom_bill_id", bill.id);
 
     const existingPersonIds = new Set(existingPeople?.map((p) => p.person_id) ?? []);
     const newPersonIds = new Set(persons.map((p) => p.id));
 
     const removedPersonIds = [...existingPersonIds].filter((id) => !newPersonIds.has(id));
-    if (removedPersonIds.length > 0)
-      await supabase.from("custom_bill_people").delete().eq("custom_bill_id", bill.id).in("person_id", removedPersonIds);
+    if (removedPersonIds.length > 0) await supabase.from("custom_bill_people").delete().eq("custom_bill_id", bill.id).in("person_id", removedPersonIds);
 
     const addedPeople = persons.filter((p) => !existingPersonIds.has(p.id));
-    if (addedPeople.length > 0)
-      await supabase.from("custom_bill_people").insert(addedPeople.map((p) => ({ custom_bill_id: bill.id, person_id: p.id, person_name: p.name })));
+    if (addedPeople.length > 0) await supabase.from("custom_bill_people").insert(addedPeople.map((p) => ({ custom_bill_id: bill.id, person_id: p.id, person_name: p.name })));
 
     // ─ 3. Diff-based items sync — NEVER wipe all items ─────────────────────
-    const { data: existingItems } = await supabase
-      .from("custom_bill_items").select("id, item_id").eq("custom_bill_id", bill.id);
+    const { data: existingItems } = await supabase.from("custom_bill_items").select("id, item_id").eq("custom_bill_id", bill.id);
 
     // Map our app UUID (item_id col) → DB primary key (id col)
-    const existingItemMap = new Map<string, string>(
-      existingItems?.map((i) => [i.item_id as string, i.id as string]) ?? []
-    );
+    const existingItemMap = new Map<string, string>(existingItems?.map((i) => [i.item_id as string, i.id as string]) ?? []);
     const newItemIds = new Set(items.map((i) => i.id));
 
     // Only delete DB rows for items that were REMOVED from state
@@ -354,24 +320,18 @@ export async function saveCustomBillToSupabase(
 
       if (!dbPk) {
         // Brand-new item
-        const { data: inserted } = await supabase
-          .from("custom_bill_items")
-          .insert({ custom_bill_id: bill.id, item_id: item.id, item_name: item.name, item_price: item.price })
-          .select("id").single();
+        const { data: inserted } = await supabase.from("custom_bill_items").insert({ custom_bill_id: bill.id, item_id: item.id, item_name: item.name, item_price: item.price }).select("id").single();
         if (!inserted) continue;
         dbPk = inserted.id;
       } else {
         // Existing item — update name/price (idempotent)
-        await supabase.from("custom_bill_items")
-          .update({ item_name: item.name, item_price: item.price }).eq("id", dbPk);
+        await supabase.from("custom_bill_items").update({ item_name: item.name, item_price: item.price }).eq("id", dbPk);
       }
 
       // Rewrite assignments for this item (small, safe)
       await supabase.from("custom_bill_item_assignments").delete().eq("item_id", dbPk);
       if (item.assignedTo.length > 0) {
-        await supabase.from("custom_bill_item_assignments").insert(
-          item.assignedTo.map((personId) => ({ item_id: dbPk, person_id: personId }))
-        );
+        await supabase.from("custom_bill_item_assignments").insert(item.assignedTo.map((personId) => ({ item_id: dbPk, person_id: personId })));
       }
     }
 
@@ -382,15 +342,9 @@ export async function saveCustomBillToSupabase(
   }
 }
 
-
 export async function deleteCustomBillFromSupabase(title: string, userEmail: string) {
   try {
-    const { data: bill } = await supabase
-      .from("custom_bills")
-      .select("id")
-      .eq("title", title)
-      .eq("user_email", userEmail)
-      .single();
+    const { data: bill } = await supabase.from("custom_bills").select("id").eq("title", title).eq("user_email", userEmail).single();
 
     if (!bill) return false;
     const { error } = await supabase.from("custom_bills").delete().eq("id", bill.id);
@@ -404,11 +358,7 @@ export async function deleteCustomBillFromSupabase(title: string, userEmail: str
 // Get all bills for list view
 export async function getAllBillsFromSupabase(userEmail: string) {
   try {
-    const { data: bills, error } = await supabase
-      .from("bills")
-      .select("*")
-      .or(`user_email.eq.${userEmail},user_email.eq.`)
-      .order("updated_at", { ascending: false });
+    const { data: bills, error } = await supabase.from("bills").select("*").or(`user_email.eq.${userEmail},user_email.eq.`).order("updated_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching bills:", error);
@@ -423,11 +373,7 @@ export async function getAllBillsFromSupabase(userEmail: string) {
 
 export async function getAllCustomBillsFromSupabase(userEmail: string) {
   try {
-    const { data: bills, error } = await supabase
-      .from("custom_bills")
-      .select("*")
-      .or(`user_email.eq.${userEmail},user_email.eq.`)
-      .order("updated_at", { ascending: false });
+    const { data: bills, error } = await supabase.from("custom_bills").select("*").or(`user_email.eq.${userEmail},user_email.eq.`).order("updated_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching custom bills:", error);
@@ -470,13 +416,25 @@ export async function deleteAllDataFromSupabase(): Promise<{ success: boolean; c
     // Delete all bills (cascades to bill_people automatically)
     const { data: bills } = await supabase.from("bills").select("id");
     if (bills && bills.length > 0) {
-      await supabase.from("bills").delete().in("id", bills.map((b) => b.id));
+      await supabase
+        .from("bills")
+        .delete()
+        .in(
+          "id",
+          bills.map((b) => b.id),
+        );
     }
 
     // Delete all custom_bills (cascades to custom_bill_people, custom_bill_items, custom_bill_item_assignments)
     const { data: customBills } = await supabase.from("custom_bills").select("id");
     if (customBills && customBills.length > 0) {
-      await supabase.from("custom_bills").delete().in("id", customBills.map((b) => b.id));
+      await supabase
+        .from("custom_bills")
+        .delete()
+        .in(
+          "id",
+          customBills.map((b) => b.id),
+        );
     }
 
     // Delete all notes
@@ -490,7 +448,6 @@ export async function deleteAllDataFromSupabase(): Promise<{ success: boolean; c
     return { success: false, count: 0 };
   }
 }
-
 
 // ─── Notes Functions ───────────────────────────────────────────────────────────
 
@@ -506,11 +463,7 @@ export interface NoteRow {
 
 export async function loadNotesFromSupabase(userEmail: string): Promise<NoteRow[]> {
   try {
-    const { data, error } = await supabase
-      .from("notes")
-      .select("*")
-      .eq("user_email", userEmail)
-      .order("sort_order", { ascending: true });
+    const { data, error } = await supabase.from("notes").select("*").eq("user_email", userEmail).order("sort_order", { ascending: true });
 
     if (error) {
       console.error("❌ Error loading notes:", error);
@@ -524,13 +477,7 @@ export async function loadNotesFromSupabase(userEmail: string): Promise<NoteRow[
   }
 }
 
-export async function saveNoteToSupabase(note: {
-  note_id: string;
-  title: string;
-  content: string;
-  sort_order: number;
-  user_email: string;
-}): Promise<boolean> {
+export async function saveNoteToSupabase(note: { note_id: string; title: string; content: string; sort_order: number; user_email: string }): Promise<boolean> {
   try {
     const { error } = await supabase.from("notes").upsert(
       {
@@ -572,16 +519,9 @@ export async function deleteNoteFromSupabase(noteId: string): Promise<boolean> {
   }
 }
 
-export async function updateNotesOrderInSupabase(
-  notes: Array<{ note_id: string; sort_order: number }>,
-): Promise<boolean> {
+export async function updateNotesOrderInSupabase(notes: Array<{ note_id: string; sort_order: number }>): Promise<boolean> {
   try {
-    const updates = notes.map((n) =>
-      supabase
-        .from("notes")
-        .update({ sort_order: n.sort_order, updated_at: new Date().toISOString() })
-        .eq("note_id", n.note_id),
-    );
+    const updates = notes.map((n) => supabase.from("notes").update({ sort_order: n.sort_order, updated_at: new Date().toISOString() }).eq("note_id", n.note_id));
 
     await Promise.all(updates);
     return true;
@@ -603,11 +543,7 @@ export interface ChatMessageRow {
 
 export async function loadChatHistoryFromSupabase(userEmail: string): Promise<ChatMessageRow[]> {
   try {
-    const { data, error } = await supabase
-      .from("chat_messages")
-      .select("*")
-      .eq("user_email", userEmail)
-      .order("created_at", { ascending: true });
+    const { data, error } = await supabase.from("chat_messages").select("*").eq("user_email", userEmail).order("created_at", { ascending: true });
 
     if (error) {
       console.error("❌ Error loading chat history:", error);
@@ -621,11 +557,7 @@ export async function loadChatHistoryFromSupabase(userEmail: string): Promise<Ch
   }
 }
 
-export async function appendChatMessageToSupabase(
-  userEmail: string,
-  role: "user" | "model",
-  content: string,
-): Promise<boolean> {
+export async function appendChatMessageToSupabase(userEmail: string, role: "user" | "model", content: string): Promise<boolean> {
   try {
     const { error } = await supabase.from("chat_messages").insert({
       user_email: userEmail,

@@ -12,9 +12,7 @@ export function BillSummaryCard({ summaries, totalBill }: BillSummaryCardProps) 
 
   return (
     <div className="space-y-3">
-      <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-        📊 Ringkasan
-      </h2>
+      <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">📊 Ringkasan</h2>
 
       <div className="rounded-xl border border-border bg-card p-4 space-y-2">
         <div className="flex justify-between text-sm text-muted-foreground">
@@ -33,13 +31,7 @@ export function BillSummaryCard({ summaries, totalBill }: BillSummaryCardProps) 
 
       <div className="grid gap-3 sm:grid-cols-2">
         {summaries.map((s, i) => (
-          <motion.div
-            key={s.personId}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className="rounded-xl border border-border bg-card p-4 space-y-2"
-          >
+          <motion.div key={s.personId} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="rounded-xl border border-border bg-card p-4 space-y-2">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Receipt className="h-4 w-4" />
