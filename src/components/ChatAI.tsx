@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useLocation } from "react-router-dom";
 import { getStoredUser } from "@/lib/userStore";
 import { loadChatHistoryFromSupabase, appendChatMessageToSupabase, clearChatHistoryFromSupabase } from "@/lib/supabase";
+import { callAI, getAIConfig } from "@/lib/ai";
 
 interface Message {
   role: "user" | "model";
@@ -72,9 +73,7 @@ const ChatAI = () => {
   if (!isVisible) return null;
 
   const handleSend = async () => {
-    const apiKey = import.meta.env.VITE_AI_API_KEY?.trim();
-    const endpoint = import.meta.env.VITE_AI_API_ENDPOINT?.trim();
-    const modelName = import.meta.env.VITE_AI_MODEL?.trim() || "free-forever";
+    const { apiKey, endpoint } = getAIConfig();
     if (!apiKey || apiKey === "your_api_key_here" || !endpoint) {
       toast.error("AI API belum dikonfigurasi di environment!");
       return;
@@ -105,31 +104,11 @@ const ChatAI = () => {
         "PENTING: Jawab dalam teks biasa (plain text) saja. JANGAN gunakan format markdown apapun seperti **bold**, *italic*, `code`, heading (#), atau list bullet (-, *). Tulis langsung tanpa simbol formatting.";
 
       const history = messages.map((m) => ({
-        role: m.role === "model" ? "assistant" : "user",
+        role: (m.role === "model" ? "assistant" : "user") as "assistant" | "user",
         content: m.content,
       }));
 
-      const payload = {
-        model: modelName,
-        messages: [{ role: "system", content: systemInstruction }, ...history, { role: "user", content: userMessage.content }],
-      };
-
-      const res = await fetch(`${endpoint.replace(/\/$/, "")}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`HTTP ${res.status}: ${errText}`);
-      }
-
-      const data = await res.json();
-      const rawText: string = data?.choices?.[0]?.message?.content ?? "";
+      const rawText = await callAI([{ role: "system", content: systemInstruction }, ...history, { role: "user", content: userMessage.content }]);
       const text = stripMarkdown(rawText);
 
       const aiMessage: Message = { role: "model", content: text };

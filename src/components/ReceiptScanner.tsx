@@ -3,6 +3,7 @@ import { Camera, Image, Loader2, Check, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { formatRupiah, type Person } from "@/lib/bill";
+import { callAI, getAIConfig } from "@/lib/ai";
 
 interface ScannedItem {
   id: string;
@@ -56,9 +57,7 @@ export const ReceiptScanner = (props: ReceiptScannerProps) => {
   }, [openDropdown]);
 
   const processFile = async (file: File) => {
-    const apiKey = import.meta.env.VITE_AI_API_KEY?.trim();
-    const endpoint = import.meta.env.VITE_AI_API_ENDPOINT?.trim();
-    const modelName = import.meta.env.VITE_AI_MODEL?.trim() || "free-forever";
+    const { apiKey, endpoint } = getAIConfig();
     if (!apiKey || apiKey === "your_api_key_here" || !endpoint) {
       toast.error("AI API belum dikonfigurasi!");
       return;
@@ -85,9 +84,8 @@ Harga harus berupa angka integer dalam Rupiah, tanpa titik atau koma pemisah rib
 Jangan sertakan pajak, service charge, diskon, atau total keseluruhan — hanya item individual.
 Jika tidak ada item yang terdeteksi, kembalikan [].`;
 
-      const payload = {
-        model: modelName,
-        messages: [
+      let text = (
+        await callAI([
           {
             role: "user",
             content: [
@@ -95,25 +93,8 @@ Jika tidak ada item yang terdeteksi, kembalikan [].`;
               { type: "image_url", image_url: { url: dataUrl } },
             ],
           },
-        ],
-      };
-
-      const res = await fetch(`${endpoint.replace(/\/$/, "")}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`HTTP ${res.status}: ${errText}`);
-      }
-
-      const data = await res.json();
-      let text: string = (data?.choices?.[0]?.message?.content ?? "").trim();
+        ])
+      ).trim();
       const fenceMatch = text.match(/```(?:json)?\n?([\s\S]*?)\n?```/);
       if (fenceMatch) text = fenceMatch[1].trim();
 
