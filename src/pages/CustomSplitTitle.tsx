@@ -66,7 +66,7 @@ const CustomSplitTitle = () => {
     <div className="min-h-screen bg-background flex flex-col items-center py-3 px-2.5 sm:py-12 sm:px-4">
       <div className="w-full max-w-md space-y-4 sm:space-y-8">
         <div className="flex items-center gap-2 sm:gap-3">
-          <Link to="/" className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground transition-colors">
+          <Link to="/" className="glass-subtle flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </Link>
           <h2 className="text-lg sm:text-2xl font-bold text-foreground">Custom Split Bill</h2>
@@ -84,10 +84,13 @@ const CustomSplitTitle = () => {
                 placeholder="Judul Split Bill (misal: Nongkrong, dll)"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm sm:px-4 sm:py-3 sm:text-lg outline-none ring-ring focus:ring-2"
+                className="glass-subtle w-full rounded-2xl px-3 py-2 text-sm sm:px-4 sm:py-3 sm:text-lg outline-none ring-ring focus:ring-2"
                 autoFocus
               />
-              <button type="submit" className="w-full rounded-lg bg-primary text-primary-foreground py-2.5 sm:py-3 font-semibold text-sm sm:text-lg transition-colors hover:opacity-90">
+              <button
+                type="submit"
+                className="w-full rounded-2xl bg-primary/70 backdrop-blur-xl border border-white/30 text-primary-foreground py-2.5 sm:py-3 font-semibold text-sm sm:text-lg shadow-lg shadow-black/10 transition-colors hover:bg-primary/85"
+              >
                 Mulai Custom Split
               </button>
             </form>
@@ -106,7 +109,7 @@ const CustomSplitTitle = () => {
                   placeholder="Cari judul..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-lg border border-input bg-background pl-8 sm:pl-9 pr-8 sm:pr-9 py-1.5 sm:py-2.5 text-xs sm:text-sm outline-none ring-ring focus:ring-2"
+                  className="glass-subtle w-full rounded-2xl pl-8 sm:pl-9 pr-8 sm:pr-9 py-1.5 sm:py-2.5 text-xs sm:text-sm outline-none ring-ring focus:ring-2"
                 />
                 {searchQuery && (
                   <button
@@ -129,15 +132,15 @@ const CustomSplitTitle = () => {
                 return (
                   <div className="grid gap-2 sm:gap-3">
                     {filtered.map((bill) => (
-                      <div key={bill.title} className="group flex items-center justify-between rounded-xl border border-border bg-card p-2.5 sm:p-4 transition-all hover:shadow-md hover:border-primary/30">
+                      <div key={bill.title} className="group glass glass-sheen flex items-center justify-between rounded-2xl p-2.5 sm:p-4 transition-all hover:border-primary/30">
                         {editingTitle === bill.title ? (
-                          <div className="flex flex-1 items-center gap-2">
+                          <div className="relative flex flex-1 items-center gap-2">
                             <input
                               type="text"
                               value={editValue}
                               onChange={(e) => setEditValue(e.target.value)}
                               onKeyDown={(e) => e.key === "Enter" && renameBill(bill.title)}
-                              className="flex-1 rounded-lg border border-input bg-background px-3 py-1.5 text-sm outline-none ring-ring focus:ring-2"
+                              className="glass-subtle flex-1 rounded-xl px-3 py-1.5 text-sm outline-none ring-ring focus:ring-2"
                               autoFocus
                             />
                             <button onClick={() => renameBill(bill.title)} className="text-primary hover:text-primary/80 transition-colors">
@@ -149,24 +152,24 @@ const CustomSplitTitle = () => {
                           </div>
                         ) : (
                           <>
-                            <button onClick={() => navigate(`/custom-split?title=${encodeURIComponent(bill.title)}`)} className="flex-1 text-left min-w-0">
+                            <button onClick={() => navigate(`/custom-split?title=${encodeURIComponent(bill.title)}`)} className="relative flex-1 text-left min-w-0">
                               <p className="font-semibold text-foreground text-sm sm:text-base truncate">{bill.title}</p>
                               <p className="text-[10px] sm:text-xs text-muted-foreground">{formatDate(bill.created_at)}</p>
                             </button>
-                            <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                            <div className="relative flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                               <button
                                 onClick={() => {
                                   setEditingTitle(bill.title);
                                   setEditValue(bill.title);
                                 }}
-                                className="h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                                className="h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                                 disabled
                               >
                                 <Pencil className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               </button>
                               <button
                                 onClick={() => setDeleteTarget(bill.title)}
-                                className="h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                className="h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                               >
                                 <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               </button>
@@ -184,7 +187,7 @@ const CustomSplitTitle = () => {
       </div>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent className="max-w-sm w-[calc(100%-2rem)] rounded-xl">
+        <AlertDialogContent className="max-w-sm w-[calc(100%-2rem)] rounded-2xl border-white/20 bg-background/70 backdrop-blur-2xl backdrop-saturate-150">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Trash2 className="h-5 w-5 text-destructive" />
@@ -193,8 +196,8 @@ const CustomSplitTitle = () => {
             <AlertDialogDescription>Data untuk "{deleteTarget}" akan dihapus secara permanen. Tindakan ini tidak bisa dibatalkan.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-lg">Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteBill} className="rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogCancel className="glass-subtle rounded-xl">Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteBill} className="rounded-xl bg-destructive/75 backdrop-blur-xl border border-white/25 text-destructive-foreground shadow-lg shadow-black/10 hover:bg-destructive/90">
               Hapus
             </AlertDialogAction>
           </AlertDialogFooter>

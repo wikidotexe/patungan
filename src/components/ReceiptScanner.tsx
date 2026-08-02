@@ -197,7 +197,7 @@ Jika tidak ada item yang terdeteksi, kembalikan [].`;
         <button
           onClick={() => setShowMenu((v) => !v)}
           disabled={isScanning}
-          className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="glass-subtle flex items-center gap-1.5 text-xs font-semibold text-primary hover:bg-primary/15 rounded-xl px-3 py-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           title="Foto struk untuk scan otomatis"
         >
           {isScanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
@@ -220,18 +220,18 @@ Jika tidak ada item yang terdeteksi, kembalikan [].`;
                     setShowMenu(false);
                     cameraInputRef.current?.click();
                   }}
-                  className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                  className="relative z-10 flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-foreground hover:bg-white/10 transition-colors"
                 >
                   <Camera className="h-4 w-4 text-primary shrink-0" />
                   Ambil Foto
                 </button>
-                <div className="border-t border-border" />
+                <div className="border-t border-border/50" />
                 <button
                   onClick={() => {
                     setShowMenu(false);
                     galleryInputRef.current?.click();
                   }}
-                  className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                  className="relative z-10 flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-foreground hover:bg-white/10 transition-colors"
                 >
                   <Image className="h-4 w-4 text-primary shrink-0" />
                   Pilih dari Galeri
@@ -264,7 +264,7 @@ Jika tidak ada item yang terdeteksi, kembalikan [].`;
                     {props.mode === "custom" && " — pilih penerima"}
                   </p>
                 </div>
-                <button onClick={handleClose} className="h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0">
+                <button onClick={handleClose} className="relative z-10 h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors shrink-0">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -298,16 +298,16 @@ Jika tidak ada item yang terdeteksi, kembalikan [].`;
                               : "Pilih..."}
                           </button>
                           {openDropdown?.itemId === item.id && (
-                            <div className="absolute top-full right-0 mt-1 w-40 sm:w-48 bg-card border border-border rounded-lg shadow-lg z-20 overflow-hidden">
+                            <div className="glass-strong absolute top-full right-0 mt-1 w-40 sm:w-48 rounded-xl z-20 overflow-hidden">
                               <div className="p-1.5 sm:p-2 space-y-0.5 sm:space-y-1 max-h-48 overflow-y-auto">
                                 {(props as CustomProps).persons.map((person) => (
-                                  <label key={person.id} className="flex items-center gap-2 p-1.5 sm:p-2 hover:bg-muted rounded cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                                  <label key={person.id} className="flex items-center gap-2 p-1.5 sm:p-2 hover:bg-white/10 rounded-lg cursor-pointer" onClick={(e) => e.stopPropagation()}>
                                     <input type="checkbox" checked={item.personIds.includes(person.id)} onChange={() => togglePerson(item.id, person.id)} className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                     <span className="text-xs sm:text-sm truncate">{person.name}</span>
                                   </label>
                                 ))}
                               </div>
-                              {(props as CustomProps).persons.length > 4 && <div className="border-t border-border bg-muted/40 px-2 py-1 text-[10px] text-muted-foreground text-center italic">Scroll untuk melihat penerima lain</div>}
+                              {(props as CustomProps).persons.length > 4 && <div className="border-t border-border/50 bg-white/10 px-2 py-1 text-[10px] text-muted-foreground text-center italic">Scroll untuk melihat penerima lain</div>}
                             </div>
                           )}
                         </div>
@@ -322,14 +322,14 @@ Jika tidak ada item yang terdeteksi, kembalikan [].`;
               </div>
 
               {/* Footer */}
-              <div className="flex gap-2 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border shrink-0">
-                <button onClick={handleClose} className="flex-1 py-2 sm:py-2.5 rounded-lg border border-border text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <div className="relative z-10 flex gap-2 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border/50 shrink-0">
+                <button onClick={handleClose} className="glass-subtle flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                   Batal
                 </button>
                 <button
                   onClick={handleConfirm}
                   disabled={scannedItems.length === 0}
-                  className="flex-1 py-2 sm:py-2.5 rounded-lg bg-primary text-primary-foreground text-xs sm:text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1 sm:gap-2"
+                  className="flex-1 py-2 sm:py-2.5 rounded-xl bg-primary/70 backdrop-blur-xl border border-white/30 shadow-lg shadow-black/10 text-primary-foreground text-xs sm:text-sm font-semibold hover:bg-primary/85 transition-colors disabled:opacity-50 flex items-center justify-center gap-1 sm:gap-2"
                 >
                   <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">Tambahkan</span>

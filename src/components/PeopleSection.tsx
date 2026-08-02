@@ -44,7 +44,7 @@ export function PeopleSection({ persons, onAdd, onRemove }: PeopleSectionProps) 
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              className="inline-flex items-center gap-1 sm:gap-1.5 rounded-full bg-secondary px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-medium text-secondary-foreground"
+              className="glass-subtle inline-flex items-center gap-1 sm:gap-1.5 rounded-full px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-medium text-secondary-foreground"
             >
               {p.name}
               <button onClick={() => onRemove(p.id)} className="rounded-full p-0.5 transition-colors hover:bg-destructive/20">

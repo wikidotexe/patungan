@@ -166,7 +166,7 @@ const Notes = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/" className="flex h-9 w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/" className="glass-subtle flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="h-4 w-4" />
             </Link>
             <h1 className="text-xl font-bold text-foreground">Catatan</h1>
@@ -177,7 +177,7 @@ const Notes = () => {
               setNewTitle("");
               setNewContent("");
             }}
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-colors"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/70 backdrop-blur-xl border border-white/30 text-primary-foreground shadow-lg shadow-black/10 hover:bg-primary/85 transition-colors"
           >
             {isAdding ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
           </button>
@@ -187,22 +187,25 @@ const Notes = () => {
         <AnimatePresence>
           {isAdding && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2, ease: "easeInOut" }} className="overflow-hidden">
-              <div className="rounded-xl border border-primary/30 bg-card p-4 space-y-3">
+              <div className="glass glass-sheen rounded-2xl border-primary/30 p-4 space-y-3">
                 <input
                   type="text"
                   placeholder="Judul catatan..."
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-semibold outline-none ring-ring focus:ring-2"
+                  className="glass-subtle relative w-full rounded-xl px-3 py-2 text-sm font-semibold outline-none ring-ring focus:ring-2"
                 />
                 <textarea
                   placeholder="Tulis catatan di sini..."
                   value={newContent}
                   onChange={(e) => setNewContent(e.target.value)}
                   rows={4}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-ring focus:ring-2 resize-none"
+                  className="glass-subtle relative w-full rounded-xl px-3 py-2 text-sm outline-none ring-ring focus:ring-2 resize-none"
                 />
-                <button onClick={addNote} className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-colors">
+                <button
+                  onClick={addNote}
+                  className="relative w-full rounded-xl bg-primary/70 backdrop-blur-xl border border-white/30 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-black/10 hover:bg-primary/85 transition-colors"
+                >
                   Simpan Catatan
                 </button>
               </div>
@@ -218,7 +221,7 @@ const Notes = () => {
           </div>
         ) : notes.length === 0 && !isAdding ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16 space-y-3">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+            <div className="glass glass-sheen mx-auto flex h-16 w-16 items-center justify-center rounded-2xl">
               <StickyNote className="h-8 w-8 text-muted-foreground" />
             </div>
             <p className="text-muted-foreground text-sm">Belum ada catatan</p>
@@ -228,37 +231,21 @@ const Notes = () => {
           <div className="space-y-3">
             <AnimatePresence>
               {notes.map((note, i) => (
-                <motion.div
-                  key={note.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -50 }}
-                  transition={{ delay: i * 0.03 }}
-                  layout
-                  className="rounded-xl border border-border bg-card p-4 space-y-2"
-                >
+                <motion.div key={note.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -50 }} transition={{ delay: i * 0.03 }} layout className="glass glass-sheen rounded-2xl p-4 space-y-2">
                   {editingId === note.id ? (
                     /* Edit Mode */
-                    <div className="space-y-3">
-                      <input
-                        type="text"
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-semibold outline-none ring-ring focus:ring-2"
-                        autoFocus
-                      />
-                      <textarea
-                        value={editContent}
-                        onChange={(e) => setEditContent(e.target.value)}
-                        rows={4}
-                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-ring focus:ring-2 resize-none"
-                      />
+                    <div className="relative space-y-3">
+                      <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="glass-subtle w-full rounded-xl px-3 py-2 text-sm font-semibold outline-none ring-ring focus:ring-2" autoFocus />
+                      <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={4} className="glass-subtle w-full rounded-xl px-3 py-2 text-sm outline-none ring-ring focus:ring-2 resize-none" />
                       <div className="flex gap-2">
-                        <button onClick={saveEdit} className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-primary py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-colors">
+                        <button
+                          onClick={saveEdit}
+                          className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-primary/70 backdrop-blur-xl border border-white/30 py-2 text-sm font-semibold text-primary-foreground shadow-lg shadow-black/10 hover:bg-primary/85 transition-colors"
+                        >
                           <Check className="h-4 w-4" />
                           Simpan
                         </button>
-                        <button onClick={() => setEditingId(null)} className="flex items-center justify-center rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                        <button onClick={() => setEditingId(null)} className="glass-subtle flex items-center justify-center rounded-xl px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
                           Batal
                         </button>
                       </div>
@@ -266,7 +253,7 @@ const Notes = () => {
                   ) : (
                     /* View Mode */
                     <>
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="relative flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-foreground truncate">{note.title}</h3>
                           <p className="text-xs text-muted-foreground mt-0.5">{formatDate(note.updatedAt)}</p>
@@ -275,26 +262,26 @@ const Notes = () => {
                           <button
                             onClick={() => moveNote(i, "up")}
                             disabled={i === 0}
-                            className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                            className="h-8 w-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                           >
                             <ArrowUp className="h-3.5 w-3.5" />
                           </button>
                           <button
                             onClick={() => moveNote(i, "down")}
                             disabled={i === notes.length - 1}
-                            className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                            className="h-8 w-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                           >
                             <ArrowDown className="h-3.5 w-3.5" />
                           </button>
-                          <button onClick={() => startEdit(note)} className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
+                          <button onClick={() => startEdit(note)} className="h-8 w-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
                             <Pencil className="h-3.5 w-3.5" />
                           </button>
-                          <button onClick={() => setDeleteTarget(note.id)} className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                          <button onClick={() => setDeleteTarget(note.id)} className="h-8 w-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       </div>
-                      {note.content && <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{note.content}</p>}
+                      {note.content && <p className="relative text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{note.content}</p>}
                     </>
                   )}
                 </motion.div>
@@ -307,7 +294,7 @@ const Notes = () => {
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent className="max-w-sm w-[calc(100%-2rem)] rounded-xl">
+        <AlertDialogContent className="max-w-sm w-[calc(100%-2rem)] rounded-2xl border-white/20 bg-background/70 backdrop-blur-2xl backdrop-saturate-150">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Trash2 className="h-5 w-5 text-destructive" />
@@ -316,8 +303,8 @@ const Notes = () => {
             <AlertDialogDescription>Catatan ini akan dihapus secara permanen. Tindakan ini tidak bisa dibatalkan.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-lg">Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogCancel className="glass-subtle rounded-xl">Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="rounded-xl bg-destructive/75 backdrop-blur-xl border border-white/25 text-destructive-foreground shadow-lg shadow-black/10 hover:bg-destructive/90">
               Hapus
             </AlertDialogAction>
           </AlertDialogFooter>

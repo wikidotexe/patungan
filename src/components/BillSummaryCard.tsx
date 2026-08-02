@@ -23,7 +23,7 @@ export function BillSummaryCard({ summaries, totalBill }: BillSummaryCardProps) 
           <span>Pajak PB1 ({TAX_RATE * 100}%)</span>
           <span>otomatis</span>
         </div>
-        <div className="border-t border-border pt-2 flex justify-between font-bold text-foreground">
+        <div className="border-t border-white/25 pt-2 flex justify-between font-bold text-foreground">
           <span>Total</span>
           <span className="text-primary">{formatRupiah(totalBill)}</span>
         </div>
@@ -31,7 +31,7 @@ export function BillSummaryCard({ summaries, totalBill }: BillSummaryCardProps) 
 
       <div className="grid gap-3 sm:grid-cols-2">
         {summaries.map((s, i) => (
-          <motion.div key={s.personId} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="rounded-xl border border-border bg-card p-4 space-y-2">
+          <motion.div key={s.personId} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="glass glass-sheen rounded-2xl p-4 space-y-2">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Receipt className="h-4 w-4" />
@@ -63,7 +63,7 @@ export function BillSummaryCard({ summaries, totalBill }: BillSummaryCardProps) 
               </div>
             </div>
 
-            <div className="flex justify-between font-bold text-card-foreground pt-1 border-t border-border">
+            <div className="flex justify-between font-bold text-card-foreground pt-1 border-t border-border/60">
               <span>Total</span>
               <span className="text-primary">{formatRupiah(s.total)}</span>
             </div>

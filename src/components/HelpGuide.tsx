@@ -74,14 +74,11 @@ const HelpGuide = () => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button
-          className="fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-card border border-border text-muted-foreground hover:text-primary hover:border-primary/50 transition-all shadow-sm hover:shadow-md"
-          aria-label="Cara Penggunaan"
-        >
+        <button className="glass glass-sheen fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:text-primary transition-all" aria-label="Cara Penggunaan">
           <HelpCircle className="h-5 w-5" />
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-md max-h-[80vh] w-[calc(100%-2rem)] rounded-xl overflow-y-auto">
+      <DialogContent className="glass-strong glass-sheen max-w-md max-h-[80vh] w-[calc(100%-2rem)] rounded-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <HelpCircle className="h-5 w-5 text-primary" />
@@ -93,8 +90,8 @@ const HelpGuide = () => {
         <div className="space-y-4 mt-2">
           {/* Step-by-step guides */}
           {steps.map((section, idx) => (
-            <motion.div key={section.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }} className="space-y-2 border border-border rounded-xl overflow-hidden">
-              <button onClick={() => setExpandedStep(expandedStep === idx ? null : idx)} className="w-full flex items-center justify-between p-3 bg-muted/30 hover:bg-muted/50 transition-colors">
+            <motion.div key={section.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }} className="glass-subtle space-y-2 rounded-2xl overflow-hidden">
+              <button onClick={() => setExpandedStep(expandedStep === idx ? null : idx)} className="w-full flex items-center justify-between p-3 hover:bg-white/10 transition-colors">
                 <div className="flex items-center gap-2">
                   <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${section.color}`}>
                     <section.icon className="h-4 w-4" />
@@ -112,7 +109,7 @@ const HelpGuide = () => {
                     <ol className="space-y-2 pb-3 px-3 pt-1">
                       {section.steps.map((step, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">{i + 1}</span>
+                          <span className="glass-subtle flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-muted-foreground">{i + 1}</span>
                           <span className="pt-0.5">{step}</span>
                         </li>
                       ))}
@@ -124,7 +121,7 @@ const HelpGuide = () => {
           ))}
 
           {/* Divider */}
-          <div className="border-t border-border" />
+          <div className="border-t border-border/60" />
 
           {/* Features */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="space-y-3">
@@ -140,7 +137,7 @@ const HelpGuide = () => {
           </motion.div>
 
           {/* Tips */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="rounded-lg bg-primary/5 border border-primary/10 p-3 space-y-1">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="rounded-xl bg-primary/10 backdrop-blur-md border border-primary/20 p-3 space-y-1">
             <p className="text-xs font-semibold text-primary">💡 Tips</p>
             <ul className="text-xs text-muted-foreground space-y-0.5">
               <li>• Masukkan nama & email saat pertama buka untuk simpan sesi</li>

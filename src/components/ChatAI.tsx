@@ -142,9 +142,11 @@ const ChatAI = () => {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex h-10 w-10 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow"
+        className="relative flex h-10 w-10 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-primary/70 backdrop-blur-xl border border-white/30 text-primary-foreground shadow-lg shadow-black/10 hover:shadow-black/20 transition-shadow overflow-hidden"
       >
-        {isOpen ? <X className="h-4 w-4 sm:h-6 sm:w-6" /> : <Sparkles className="h-5 w-5 sm:h-7 sm:w-7" />}
+        <span className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-white/15 via-white/5 to-transparent" />
+        <span className="pointer-events-none absolute inset-x-2 top-1 h-1/3 rounded-full bg-white/10 blur-[6px]" />
+        <span className="relative">{isOpen ? <X className="h-4 w-4 sm:h-6 sm:w-6" /> : <Sparkles className="h-5 w-5 sm:h-7 sm:w-7" />}</span>
       </motion.button>
 
       {/* Chat Window */}
@@ -160,7 +162,7 @@ const ChatAI = () => {
               opacity: { duration: 0.2 },
             }}
             className={`
-                            fixed md:absolute bg-card border border-border shadow-2xl flex flex-col overflow-hidden
+                            fixed md:absolute bg-card/60 backdrop-blur-2xl backdrop-saturate-150 border border-white/20 shadow-2xl shadow-black/20 flex flex-col overflow-hidden
                             ${
                               isMobile && isMaximized
                                 ? "inset-0 w-full h-full rounded-none z-[75]"
@@ -170,10 +172,15 @@ const ChatAI = () => {
                             }
                         `}
           >
+            {/* Liquid glass sheen */}
+            <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-br from-white/25 via-white/5 to-transparent" />
+            <div className="pointer-events-none absolute -top-16 -left-10 z-0 h-40 w-40 rounded-full bg-primary/30 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-20 -right-10 z-0 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />
+
             {/* Header */}
-            <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between shrink-0">
+            <div className="relative z-10 p-4 border-b border-white/15 bg-white/10 backdrop-blur-xl flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md border border-white/30 text-primary shadow-inner shadow-black/10">
                   <Sparkles className="h-4 w-4" />
                 </div>
                 <div>
@@ -182,22 +189,34 @@ const ChatAI = () => {
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={clearChat} className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" title="Hapus riwayat chat">
+                <button
+                  onClick={clearChat}
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-destructive hover:bg-white/20 backdrop-blur-md border border-transparent hover:border-white/30 transition-all"
+                  title="Hapus riwayat chat"
+                >
                   <Trash2 className="h-4 w-4" />
                 </button>
                 {isMobile && (
-                  <button onClick={() => setIsMaximized(!isMaximized)} className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted transition-colors" title={isMaximized ? "Minimize" : "Maximize"}>
+                  <button
+                    onClick={() => setIsMaximized(!isMaximized)}
+                    className="h-8 w-8 flex items-center justify-center rounded-xl text-muted-foreground hover:bg-white/20 backdrop-blur-md border border-transparent hover:border-white/30 transition-all"
+                    title={isMaximized ? "Minimize" : "Maximize"}
+                  >
                     {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
                   </button>
                 )}
-                <button onClick={() => setIsOpen(false)} className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted transition-colors" title="Tutup">
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-muted-foreground hover:bg-white/20 backdrop-blur-md border border-transparent hover:border-white/30 transition-all"
+                  title="Tutup"
+                >
                   <X className="h-5 w-5" />
                 </button>
               </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
+            <div className="relative z-10 flex-1 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
               {isChatLoading ? (
                 <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
                   <Loader2 className="h-6 w-6 animate-spin" />
@@ -205,7 +224,7 @@ const ChatAI = () => {
                 </div>
               ) : messages.length === 0 ? (
                 <div className="text-center py-10 space-y-3">
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/15 backdrop-blur-xl border border-white/30 shadow-lg shadow-black/5">
                     <MessageCircle className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <div className="space-y-1">
@@ -216,7 +235,11 @@ const ChatAI = () => {
               ) : (
                 messages.map((m, i) => (
                   <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm leading-relaxed ${m.role === "user" ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-muted text-foreground rounded-tl-none border border-border"}`}>
+                    <div
+                      className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm leading-relaxed backdrop-blur-xl border shadow-lg shadow-black/5 ${
+                        m.role === "user" ? "bg-primary/70 border-white/30 text-primary-foreground rounded-tr-none" : "bg-white/15 border-white/25 text-foreground rounded-tl-none"
+                      }`}
+                    >
                       {m.content}
                     </div>
                   </div>
@@ -225,7 +248,7 @@ const ChatAI = () => {
 
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-muted text-foreground rounded-2xl p-3 flex gap-1 rounded-tl-none border border-border">
+                  <div className="bg-white/15 backdrop-blur-xl text-foreground rounded-2xl p-3 flex gap-1 rounded-tl-none border border-white/25 shadow-lg shadow-black/5">
                     <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.3s]"></span>
                     <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.15s]"></span>
                     <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce"></span>
@@ -235,7 +258,7 @@ const ChatAI = () => {
             </div>
 
             {/* Input Area */}
-            <div className="p-3 pb-8 md:pb-3 border-t border-border bg-muted/10 shrink-0">
+            <div className="relative z-10 p-3 pb-8 md:pb-3 border-t border-white/15 bg-white/10 backdrop-blur-xl shrink-0">
               <div className="relative">
                 <textarea
                   value={input}
@@ -249,13 +272,13 @@ const ChatAI = () => {
                   placeholder={userEmail ? "Ketik pesan..." : "Login dulu untuk menggunakan AI Chat"}
                   disabled={!userEmail}
                   rows={1}
-                  className="w-full rounded-xl border border-input bg-card pl-4 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none max-h-32 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full rounded-2xl border border-white/25 bg-white/15 backdrop-blur-xl shadow-inner shadow-black/10 pl-4 pr-12 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-white/40 resize-none max-h-32 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   style={{ height: `${Math.min(input.split("\n").length * 20 + 44, 128)}px` }}
                 />
                 <button
                   onClick={handleSend}
                   disabled={!input.trim() || isLoading || !userEmail}
-                  className="absolute right-2 bottom-5 md:bottom-5 h-9 w-9 flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="absolute right-2 bottom-5 md:bottom-5 h-9 w-9 flex items-center justify-center rounded-xl bg-primary/70 backdrop-blur-xl border border-white/30 text-primary-foreground shadow-lg shadow-black/10 hover:bg-primary/85 transition-all disabled:opacity-50"
                 >
                   <Send className="h-4 w-4" />
                 </button>

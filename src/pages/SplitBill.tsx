@@ -274,35 +274,31 @@ const SplitBill = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link to="/" className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/" className="glass-subtle flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Link>
             <h1 className="text-base sm:text-xl font-bold text-foreground">Split Bill</h1>
           </div>
-          <button
-            onClick={() => setResetConfirmOpen(true)}
-            className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-destructive transition-colors"
-            title="Hapus Data"
-          >
+          <button onClick={() => setResetConfirmOpen(true)} className="glass-subtle flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl text-muted-foreground hover:text-destructive transition-colors" title="Hapus Data">
             <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
         </div>
 
         {/* Bill Info */}
-        <div className="rounded-xl border border-border bg-card p-3 sm:p-4 space-y-3 sm:space-y-4">
-          <div className="space-y-1.5">
+        <div className="glass glass-sheen rounded-2xl p-3 sm:p-4 space-y-3 sm:space-y-4">
+          <div className="relative space-y-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nama Tagihan</label>
             <input
               type="text"
               placeholder="Contoh: Makan Siang"
               value={billName}
               onChange={(e) => setBillName(e.target.value)}
-              className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 sm:px-3 sm:py-2.5 text-xs sm:text-sm outline-none ring-ring focus:ring-2"
+              className="glass-subtle w-full rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2.5 text-xs sm:text-sm outline-none ring-ring focus:ring-2"
             />
           </div>
 
           {/* Items section */}
-          <div className="space-y-2">
+          <div className="relative space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Item / Menu {items.length > 0 && <span className="text-primary">({items.length})</span>}</label>
               <ReceiptScanner
@@ -318,29 +314,11 @@ const SplitBill = () => {
             {/* Item list */}
             <AnimatePresence initial={false}>
               {items.map((item) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2"
-                >
+                <motion.div key={item.id} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="glass-subtle flex items-center justify-between rounded-xl px-3 py-2">
                   {editingId === item.id ? (
                     <>
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="flex-1 min-w-0 rounded-lg border border-input bg-background px-2 py-1 text-sm outline-none ring-ring focus:ring-2 mr-2"
-                        placeholder="Nama item"
-                      />
-                      <input
-                        type="number"
-                        value={editPrice}
-                        onChange={(e) => setEditPrice(e.target.value)}
-                        className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-sm outline-none ring-ring focus:ring-2 mr-2"
-                        placeholder="Harga"
-                      />
+                      <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="glass-subtle flex-1 min-w-0 rounded-xl px-2 py-1 text-sm outline-none ring-ring focus:ring-2 mr-2" placeholder="Nama item" />
+                      <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} className="glass-subtle w-24 rounded-xl px-2 py-1 text-sm outline-none ring-ring focus:ring-2 mr-2" placeholder="Harga" />
                       <button onClick={() => confirmEditItem(item.id)} className="text-primary hover:opacity-80 transition-opacity mr-1" title="Simpan">
                         <Check className="h-4 w-4" />
                       </button>
@@ -373,7 +351,7 @@ const SplitBill = () => {
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addItem()}
-                className="flex-1 min-w-0 rounded-lg border border-input bg-background px-2.5 py-1.5 sm:px-3 sm:py-2.5 text-xs sm:text-sm outline-none ring-ring focus:ring-2"
+                className="glass-subtle flex-1 min-w-0 rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2.5 text-xs sm:text-sm outline-none ring-ring focus:ring-2"
               />
               <input
                 type="number"
@@ -381,9 +359,12 @@ const SplitBill = () => {
                 value={newItemPrice}
                 onChange={(e) => setNewItemPrice(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addItem()}
-                className="w-24 sm:w-28 rounded-lg border border-input bg-background px-2.5 py-1.5 sm:px-3 sm:py-2.5 text-xs sm:text-sm outline-none ring-ring focus:ring-2"
+                className="glass-subtle w-24 sm:w-28 rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2.5 text-xs sm:text-sm outline-none ring-ring focus:ring-2"
               />
-              <button onClick={addItem} className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-colors">
+              <button
+                onClick={addItem}
+                className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-primary/70 backdrop-blur-xl border border-white/30 text-primary-foreground shadow-lg shadow-black/10 hover:bg-primary/85 transition-colors"
+              >
                 <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </button>
             </div>
@@ -391,24 +372,26 @@ const SplitBill = () => {
 
           {/* Subtotal from items */}
           {items.length > 0 && (
-            <div className="flex justify-between items-center border-t border-border pt-3">
+            <div className="relative flex justify-between items-center border-t border-white/20 pt-3">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Subtotal</span>
               <span className="text-base font-bold text-foreground">{formatRupiah(itemsTotal)}</span>
             </div>
           )}
-          {items.length === 0 && <p className="text-xs text-muted-foreground">Tambahkan item untuk menghitung total otomatis</p>}
+          {items.length === 0 && <p className="relative text-xs text-muted-foreground">Tambahkan item untuk menghitung total otomatis</p>}
         </div>
 
         {/* People */}
-        <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
-          <PeopleSection persons={persons} onAdd={addPerson} onRemove={removePerson} />
+        <div className="glass glass-sheen rounded-2xl p-3 sm:p-4">
+          <div className="relative">
+            <PeopleSection persons={persons} onAdd={addPerson} onRemove={removePerson} />
+          </div>
         </div>
 
         {/* Tax & Service */}
-        <div className="rounded-xl border border-border bg-card p-3 sm:p-4 space-y-2.5 sm:space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pajak & Service</h2>
+        <div className="glass glass-sheen rounded-2xl p-3 sm:p-4 space-y-2.5 sm:space-y-3">
+          <h2 className="relative text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pajak & Service</h2>
 
-          <div className="flex items-center justify-between">
+          <div className="relative flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm font-semibold text-foreground">Service Charge {SERVICE_CHARGE_RATE * 100}%</p>
               <p className="text-[10px] sm:text-xs text-muted-foreground">{enableService ? (customService ? `custom: ${formatRupiah(Number(customService))}` : formatRupiah(calculation.service)) : formatRupiah(0)}</p>
@@ -421,16 +404,19 @@ const SplitBill = () => {
                   placeholder="Rp Custom"
                   value={customService}
                   onChange={(e) => setCustomService(e.target.value)}
-                  className="w-20 sm:w-24 rounded-lg border border-input bg-background px-2 py-1 text-[10px] sm:text-xs outline-none ring-ring focus:ring-2"
+                  className="glass-subtle w-20 sm:w-24 rounded-xl px-2 py-1 text-[10px] sm:text-xs outline-none ring-ring focus:ring-2"
                 />
               )}
-              <button onClick={() => setEnableService(!enableService)} className={`relative h-5 w-9 sm:h-6 sm:w-11 rounded-full transition-colors ${enableService ? "bg-primary" : "bg-muted"}`}>
+              <button
+                onClick={() => setEnableService(!enableService)}
+                className={`relative h-5 w-9 sm:h-6 sm:w-11 rounded-full border border-white/25 backdrop-blur-md transition-colors ${enableService ? "bg-primary/70 shadow-lg shadow-black/10" : "bg-muted/60"}`}
+              >
                 <span className={`absolute top-0.5 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-primary-foreground shadow transition-transform ${enableService ? "left-[18px] sm:left-[22px]" : "left-0.5"}`} />
               </button>
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="relative flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm font-semibold text-foreground">PB1 / Pajak {TAX_RATE * 100}%</p>
               <p className="text-[10px] sm:text-xs text-muted-foreground">{enableTax ? (customTax ? `custom: ${formatRupiah(Number(customTax))}` : formatRupiah(calculation.tax)) : formatRupiah(0)}</p>
@@ -443,16 +429,19 @@ const SplitBill = () => {
                   placeholder="Rp Custom"
                   value={customTax}
                   onChange={(e) => setCustomTax(e.target.value)}
-                  className="w-20 sm:w-24 rounded-lg border border-input bg-background px-2 py-1 text-[10px] sm:text-xs outline-none ring-ring focus:ring-2"
+                  className="glass-subtle w-20 sm:w-24 rounded-xl px-2 py-1 text-[10px] sm:text-xs outline-none ring-ring focus:ring-2"
                 />
               )}
-              <button onClick={() => setEnableTax(!enableTax)} className={`relative h-5 w-9 sm:h-6 sm:w-11 rounded-full transition-colors ${enableTax ? "bg-primary" : "bg-muted"}`}>
+              <button
+                onClick={() => setEnableTax(!enableTax)}
+                className={`relative h-5 w-9 sm:h-6 sm:w-11 rounded-full border border-white/25 backdrop-blur-md transition-colors ${enableTax ? "bg-primary/70 shadow-lg shadow-black/10" : "bg-muted/60"}`}
+              >
                 <span className={`absolute top-0.5 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-primary-foreground shadow transition-transform ${enableTax ? "left-[18px] sm:left-[22px]" : "left-0.5"}`} />
               </button>
             </div>
           </div>
-          <p className="text-[10px] text-muted-foreground italic mt-1 font-medium">* Pajak dan service, di bagi rata ke semua teman</p>
-          <div className="border-t border-border pt-2.5 sm:pt-3 flex justify-between items-center">
+          <p className="relative text-[10px] text-muted-foreground italic mt-1 font-medium">* Pajak dan service, di bagi rata ke semua teman</p>
+          <div className="relative border-t border-white/20 pt-2.5 sm:pt-3 flex justify-between items-center">
             <span className="font-semibold text-foreground text-sm sm:text-base">Total</span>
             <span className="text-base sm:text-lg font-bold text-primary">{formatRupiah(calculation.total)}</span>
           </div>
@@ -460,8 +449,8 @@ const SplitBill = () => {
 
         {/* Results */}
         {persons.length > 0 && calculation.base > 0 && (
-          <div className="rounded-xl border border-border bg-card p-3 sm:p-4 space-y-3 sm:space-y-4">
-            <div className="flex items-center justify-between">
+          <div className="glass glass-sheen rounded-2xl p-3 sm:p-4 space-y-3 sm:space-y-4">
+            <div className="relative flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-primary" />
                 <h2 className="font-bold text-foreground">Hasil Split</h2>
@@ -484,21 +473,21 @@ const SplitBill = () => {
               </div>
             </div>
 
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="rounded-xl bg-foreground p-5 text-center">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative rounded-2xl bg-foreground/90 backdrop-blur-xl border border-white/20 p-5 text-center shadow-lg">
               <p className="text-sm text-muted">Per Teman</p>
               <p className="text-3xl font-bold text-background">{formatRupiah(calculation.perPerson)}</p>
             </motion.div>
 
-            <div className="space-y-2">
+            <div className="relative space-y-2">
               {persons.map((p, i) => (
-                <motion.div key={p.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="flex items-center justify-between rounded-xl bg-background border border-border px-4 py-3">
+                <motion.div key={p.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="glass-subtle flex items-center justify-between rounded-2xl px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-sm font-bold text-muted-foreground">{p.name.charAt(0).toUpperCase()}</div>
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 border border-white/20 text-sm font-bold text-muted-foreground">{p.name.charAt(0).toUpperCase()}</div>
                     <span className="font-semibold text-foreground">{p.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-foreground">{formatRupiah(calculation.perPerson)}</span>
-                    <button onClick={() => copyPerson(p.name, calculation.perPerson)} className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground transition-colors">
+                    <button onClick={() => copyPerson(p.name, calculation.perPerson)} className="rounded-xl p-1.5 text-muted-foreground hover:text-foreground transition-colors">
                       <Copy className="h-4 w-4" />
                     </button>
                   </div>
@@ -515,7 +504,7 @@ const SplitBill = () => {
       <Footer />
 
       <AlertDialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
-        <AlertDialogContent className="max-w-sm w-[calc(100%-2rem)] rounded-xl">
+        <AlertDialogContent className="max-w-sm w-[calc(100%-2rem)] rounded-2xl border-white/20 bg-background/70 backdrop-blur-2xl backdrop-saturate-150">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Trash2 className="h-5 w-5 text-destructive" />
@@ -524,8 +513,8 @@ const SplitBill = () => {
             <AlertDialogDescription>Semua data input untuk bill ini akan dihapus. Tindakan ini tidak bisa dibatalkan.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-lg">Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={resetData} className="rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogCancel className="glass-subtle rounded-xl">Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={resetData} className="rounded-xl bg-destructive/75 backdrop-blur-xl border border-white/25 text-destructive-foreground shadow-lg shadow-black/10 hover:bg-destructive/90">
               Hapus
             </AlertDialogAction>
           </AlertDialogFooter>

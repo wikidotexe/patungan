@@ -83,11 +83,88 @@
 }
 
 @layer base {
+  :root {
+    /* Liquid glass tokens */
+    --glass-bg: 0 0% 100%;
+    --glass-bg-opacity: 0.55;
+    --glass-border: 0 0% 100%;
+    --glass-border-opacity: 0.4;
+    --glass-highlight: 0 0% 100%;
+    --glass-highlight-opacity: 0.12;
+    --glass-shadow: 0 0% 0%;
+  }
+
+  .dark {
+    --glass-bg: 0 0% 100%;
+    --glass-bg-opacity: 0.08;
+    --glass-border: 0 0% 100%;
+    --glass-border-opacity: 0.14;
+    --glass-highlight: 0 0% 100%;
+    --glass-highlight-opacity: 0.08;
+    --glass-shadow: 0 0% 0%;
+  }
+}
+
+@layer base {
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
     font-family: "Plus Jakarta Sans", sans-serif;
+    background-attachment: fixed;
+    background-image:
+      radial-gradient(60rem 40rem at 8% -10%, hsl(var(--primary) / 0.18), transparent 60%), radial-gradient(50rem 35rem at 100% 0%, hsl(var(--accent) / 0.14), transparent 60%),
+      radial-gradient(45rem 40rem at 50% 110%, hsl(var(--primary) / 0.12), transparent 60%);
+  }
+}
+
+@layer components {
+  /* Permukaan kaca dasar */
+  .glass {
+    background-color: hsl(var(--glass-bg) / var(--glass-bg-opacity));
+    border: 1px solid hsl(var(--glass-border) / var(--glass-border-opacity));
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    box-shadow:
+      0 8px 24px hsl(var(--glass-shadow) / 0.1),
+      inset 0 1px 0 hsl(var(--glass-highlight) / var(--glass-highlight-opacity));
+  }
+
+  /* Varian tipis untuk elemen kecil (input, tombol, badge) */
+  .glass-subtle {
+    background-color: hsl(var(--glass-bg) / calc(var(--glass-bg-opacity) * 0.6));
+    border: 1px solid hsl(var(--glass-border) / calc(var(--glass-border-opacity) * 0.8));
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    backdrop-filter: blur(12px) saturate(160%);
+    box-shadow:
+      0 2px 8px hsl(var(--glass-shadow) / 0.06),
+      inset 0 1px 0 hsl(var(--glass-highlight) / calc(var(--glass-highlight-opacity) * 0.7));
+  }
+
+  /* Varian tebal untuk overlay besar (dialog, sheet, popover) */
+  .glass-strong {
+    background-color: hsl(var(--glass-bg) / calc(var(--glass-bg-opacity) * 1.25));
+    border: 1px solid hsl(var(--glass-border) / var(--glass-border-opacity));
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    backdrop-filter: blur(28px) saturate(190%);
+    box-shadow:
+      0 16px 40px hsl(var(--glass-shadow) / 0.16),
+      inset 0 1px 0 hsl(var(--glass-highlight) / var(--glass-highlight-opacity));
+  }
+
+  /* Kilau melengkung khas liquid glass */
+  .glass-sheen {
+    position: relative;
+    isolation: isolate;
+  }
+  .glass-sheen::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1; /* di atas background kaca, tetapi di bawah konten */
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(140deg, hsl(var(--glass-highlight) / calc(var(--glass-highlight-opacity) * 1.2)) 0%, hsl(var(--glass-highlight) / calc(var(--glass-highlight-opacity) * 0.3)) 35%, transparent 60%);
   }
 }

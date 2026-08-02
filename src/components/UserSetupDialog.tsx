@@ -64,7 +64,7 @@ export function UserSetupDialog({ onComplete }: UserSetupDialogProps) {
       {visible && (
         <>
           {/* Backdrop */}
-          <motion.div key="backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" />
+          <motion.div key="backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-background/40 backdrop-blur-md" />
 
           {/* Dialog */}
           <motion.div
@@ -75,11 +75,11 @@ export function UserSetupDialog({ onComplete }: UserSetupDialogProps) {
             transition={{ type: "spring", duration: 0.4, bounce: 0.2 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
-            <div className="w-full max-w-sm rounded-2xl border border-border bg-card shadow-xl overflow-hidden">
+            <div className="glass-strong glass-sheen w-full max-w-sm rounded-2xl overflow-hidden">
               {/* Header */}
-              <div className="bg-primary px-6 py-5 text-primary-foreground">
+              <div className="relative z-10 bg-primary/70 backdrop-blur-xl border-b border-white/25 px-6 py-5 text-primary-foreground">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-foreground/20">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-foreground/20 backdrop-blur-md border border-white/30">
                     <Sparkles className="h-5 w-5" />
                   </div>
                   <div>
@@ -90,7 +90,7 @@ export function UserSetupDialog({ onComplete }: UserSetupDialogProps) {
               </div>
 
               {/* Body */}
-              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <form onSubmit={handleSubmit} className="relative z-10 p-6 space-y-4">
                 <p className="text-sm text-muted-foreground leading-relaxed">Masukkan nama dan email kamu untuk menyimpan sesi. Data kamu akan aman di cloud. ☁️</p>
 
                 {/* Username */}
@@ -103,7 +103,7 @@ export function UserSetupDialog({ onComplete }: UserSetupDialogProps) {
                       placeholder="Nama kamu..."
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2.5 text-sm outline-none ring-ring focus:ring-2 transition-all"
+                      className="glass-subtle w-full rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none ring-ring focus:ring-2 transition-all"
                       autoFocus
                       disabled={isSubmitting}
                     />
@@ -120,7 +120,7 @@ export function UserSetupDialog({ onComplete }: UserSetupDialogProps) {
                       placeholder="email@kamu.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2.5 text-sm outline-none ring-ring focus:ring-2 transition-all"
+                      className="glass-subtle w-full rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none ring-ring focus:ring-2 transition-all"
                       disabled={isSubmitting}
                     />
                   </div>
@@ -129,7 +129,7 @@ export function UserSetupDialog({ onComplete }: UserSetupDialogProps) {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-60 disabled:pointer-events-none"
+                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-primary/70 backdrop-blur-xl border border-white/30 shadow-lg shadow-black/10 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/85 active:scale-[0.98] transition-all disabled:opacity-60 disabled:pointer-events-none"
                 >
                   {isSubmitting ? (
                     <>

@@ -16,12 +16,12 @@ const CoffeeBubble = () => {
               animate={{ scale: 1, opacity: 1 }}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              className="flex h-10 w-10 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-foreground text-background shadow-lg shadow-foreground/20 hover:opacity-90 transition-all font-bold"
+              className="flex h-10 w-10 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-foreground/75 backdrop-blur-xl border border-white/30 text-background shadow-lg shadow-black/10 hover:bg-foreground/90 transition-all font-bold"
             >
               <Coffee className="h-4 w-4 sm:h-6 sm:w-6" />
             </motion.a>
           </TooltipTrigger>
-          <TooltipContent side="left" className="bg-card text-card-foreground border-border">
+          <TooltipContent side="left" className="glass glass-sheen rounded-xl text-foreground">
             <p className="font-medium text-sm">Dukung Kita ya! ☕️</p>
           </TooltipContent>
         </Tooltip>

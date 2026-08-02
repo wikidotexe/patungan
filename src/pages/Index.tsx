@@ -355,14 +355,14 @@ const Index = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link to="/" className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/" className="glass-subtle flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Link>
             <h1 className="text-base sm:text-xl font-bold text-foreground truncate">{splitTitle || "Custom Split Bill"}</h1>
           </div>
           <button
             onClick={() => setResetConfirmOpen(true)}
-            className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-card border border-border text-muted-foreground hover:text-destructive transition-colors shrink-0"
+            className="glass-subtle flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl text-muted-foreground hover:text-destructive transition-colors shrink-0"
             title="Hapus Data"
           >
             <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -370,8 +370,10 @@ const Index = () => {
         </div>
 
         {/* People */}
-        <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
-          <PeopleSection persons={persons} onAdd={addPerson} onRemove={removePerson} />
+        <div className="glass glass-sheen rounded-2xl p-3 sm:p-4">
+          <div className="relative">
+            <PeopleSection persons={persons} onAdd={addPerson} onRemove={removePerson} />
+          </div>
         </div>
 
         {/* Per-person items */}
@@ -390,7 +392,7 @@ const Index = () => {
                     toast.success(`${scanned.length} item ditambahkan dari struk`);
                   }}
                 />
-                <button onClick={openImportModal} className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 rounded-lg px-3 py-1.5 transition-colors">
+                <button onClick={openImportModal} className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 bg-primary/10 backdrop-blur-md hover:bg-primary/20 rounded-xl px-3 py-1.5 transition-colors">
                   <Plus className="h-3.5 w-3.5" />
                   Import Sharing
                 </button>
@@ -409,9 +411,9 @@ const Index = () => {
         )}
 
         {/* Tax & Service */}
-        <div className="rounded-xl border border-border bg-card p-3 sm:p-4 space-y-2.5 sm:space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pajak & Service</h2>
-          <div className="flex items-center justify-between">
+        <div className="glass glass-sheen rounded-2xl p-3 sm:p-4 space-y-2.5 sm:space-y-3">
+          <h2 className="relative text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pajak & Service</h2>
+          <div className="relative flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm font-semibold text-foreground">Service Charge {SERVICE_CHARGE_RATE * 100}%</p>
               <p className="text-[10px] sm:text-xs text-muted-foreground">{enableService ? (customService ? `custom: ${formatRupiah(Number(customService))}` : "otomatis") : "nonaktif"}</p>
@@ -424,15 +426,18 @@ const Index = () => {
                   placeholder="Rp Custom"
                   value={customService}
                   onChange={(e) => setCustomService(e.target.value)}
-                  className="w-20 sm:w-24 rounded-lg border border-input bg-background px-2 py-1 text-[10px] sm:text-xs outline-none ring-ring focus:ring-2"
+                  className="glass-subtle w-20 sm:w-24 rounded-xl px-2 py-1 text-[10px] sm:text-xs outline-none ring-ring focus:ring-2"
                 />
               )}
-              <button onClick={() => setEnableService(!enableService)} className={`relative h-5 w-9 sm:h-6 sm:w-11 rounded-full transition-colors ${enableService ? "bg-primary" : "bg-muted"}`}>
+              <button
+                onClick={() => setEnableService(!enableService)}
+                className={`relative h-5 w-9 sm:h-6 sm:w-11 rounded-full border border-white/25 backdrop-blur-md transition-colors ${enableService ? "bg-primary/70 shadow-lg shadow-black/10" : "bg-muted/60"}`}
+              >
                 <span className={`absolute top-0.5 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-primary-foreground shadow transition-transform ${enableService ? "left-[18px] sm:left-[22px]" : "left-0.5"}`} />
               </button>
             </div>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="relative flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm font-semibold text-foreground">PB1 / Pajak {TAX_RATE * 100}%</p>
               <p className="text-[10px] sm:text-xs text-muted-foreground">{enableTax ? (customTax ? `custom: ${formatRupiah(Number(customTax))}` : "otomatis") : "nonaktif"}</p>
@@ -445,16 +450,19 @@ const Index = () => {
                   placeholder="Rp Custom"
                   value={customTax}
                   onChange={(e) => setCustomTax(e.target.value)}
-                  className="w-20 sm:w-24 rounded-lg border border-input bg-background px-2 py-1 text-[10px] sm:text-xs outline-none ring-ring focus:ring-2"
+                  className="glass-subtle w-20 sm:w-24 rounded-xl px-2 py-1 text-[10px] sm:text-xs outline-none ring-ring focus:ring-2"
                 />
               )}
-              <button onClick={() => setEnableTax(!enableTax)} className={`relative h-5 w-9 sm:h-6 sm:w-11 rounded-full transition-colors ${enableTax ? "bg-primary" : "bg-muted"}`}>
+              <button
+                onClick={() => setEnableTax(!enableTax)}
+                className={`relative h-5 w-9 sm:h-6 sm:w-11 rounded-full border border-white/25 backdrop-blur-md transition-colors ${enableTax ? "bg-primary/70 shadow-lg shadow-black/10" : "bg-muted/60"}`}
+              >
                 <span className={`absolute top-0.5 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-primary-foreground shadow transition-transform ${enableTax ? "left-[18px] sm:left-[22px]" : "left-0.5"}`} />
               </button>
             </div>
           </div>
-          <p className="text-[10px] text-muted-foreground italic mt-1 font-medium">* Pajak dan service, di bagi rata ke semua teman</p>
-          <div className="border-t border-border pt-2.5 sm:pt-3 flex justify-between items-center">
+          <p className="relative text-[10px] text-muted-foreground italic mt-1 font-medium">* Pajak dan service, di bagi rata ke semua teman</p>
+          <div className="relative border-t border-white/20 pt-2.5 sm:pt-3 flex justify-between items-center">
             <span className="font-semibold text-foreground text-sm sm:text-base">Total</span>
             <span className="text-base sm:text-lg font-bold text-primary">{formatRupiah(totalBill)}</span>
           </div>
@@ -463,8 +471,8 @@ const Index = () => {
         {/* Results */}
         {summaries.some((s) => s.items.length > 0) && (
           <>
-            <div className="rounded-xl border border-border bg-card p-4 space-y-4">
-              <div className="flex items-center justify-between">
+            <div className="glass glass-sheen rounded-2xl p-4 space-y-4">
+              <div className="relative flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-5 w-5 text-primary" />
                   <h2 className="font-bold text-foreground">Hasil Split</h2>
@@ -499,12 +507,12 @@ const Index = () => {
                   </button>
                 </div>
               </div>
-              <div ref={pdfRef} className="grid gap-3 sm:grid-cols-2">
+              <div ref={pdfRef} className="relative grid gap-3 sm:grid-cols-2">
                 {summaries.map((s, i) => (
-                  <motion.div key={s.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="rounded-xl border border-border bg-background p-4 space-y-2">
+                  <motion.div key={s.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="glass-subtle rounded-2xl p-4 space-y-2">
                     <button onClick={() => setCollapsedResults((prev) => (prev.includes(s.id) ? prev.filter((id) => id !== s.id) : [...prev, s.id]))} className="flex w-full items-center justify-between text-left">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 border border-white/20 backdrop-blur-md text-primary">
                           <Receipt className="h-4 w-4" />
                         </div>
                         <div>
@@ -518,7 +526,7 @@ const Index = () => {
                             e.stopPropagation();
                             copyPerson(s);
                           }}
-                          className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                          className="rounded-xl p-1.5 text-muted-foreground hover:text-foreground transition-colors"
                         >
                           <Copy className="h-4 w-4" />
                         </span>
@@ -538,7 +546,7 @@ const Index = () => {
                                   </div>
                                 ))}
                               </div>
-                              <div className="border-t border-border pt-2 space-y-1 text-xs text-muted-foreground">
+                              <div className="border-t border-white/20 pt-2 space-y-1 text-xs text-muted-foreground">
                                 <div className="flex justify-between">
                                   <span>Subtotal</span>
                                   <span>{formatRupiah(s.subtotal)}</span>
@@ -556,7 +564,7 @@ const Index = () => {
                                   </div>
                                 )}
                               </div>
-                              <div className="flex justify-between font-bold text-foreground pt-1 border-t border-border">
+                              <div className="flex justify-between font-bold text-foreground pt-1 border-t border-white/20">
                                 <span>Total</span>
                                 <span className="text-primary">{formatRupiah(s.total)}</span>
                               </div>
@@ -585,11 +593,11 @@ const Index = () => {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 40, opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="w-full max-w-sm rounded-2xl border border-border bg-card shadow-2xl overflow-hidden"
+              className="glass-strong glass-sheen w-full max-w-sm rounded-2xl overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <div className="relative flex items-center justify-between px-5 py-4 border-b border-white/20">
                 <div>
                   <h3 className="font-bold text-foreground">Import Sharing</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">Pilih Split Bill untuk dibagi rata ke semua teman</p>
@@ -600,7 +608,7 @@ const Index = () => {
               </div>
 
               {/* Bill list */}
-              <div className="max-h-80 overflow-y-auto p-3 space-y-2">
+              <div className="relative max-h-80 overflow-y-auto p-3 space-y-2">
                 {importLoading ? (
                   <p className="text-center text-sm text-muted-foreground py-6">Memuat daftar bill...</p>
                 ) : importBills.length === 0 ? (
@@ -620,7 +628,7 @@ const Index = () => {
                     const total = items.reduce((s, i) => s + (i.price || 0), 0);
                     const perPerson = persons.length > 0 ? Math.round(total / persons.length) : 0;
                     return (
-                      <button key={bill.id} onClick={() => importSharing(bill)} className="w-full text-left rounded-xl border border-border bg-background hover:border-primary/50 hover:bg-primary/5 px-4 py-3 transition-colors">
+                      <button key={bill.id} onClick={() => importSharing(bill)} className="glass-subtle w-full text-left rounded-2xl hover:border-primary/50 hover:bg-primary/10 px-4 py-3 transition-colors">
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="font-semibold text-foreground text-sm">{bill.bill_name || bill.title}</p>
@@ -644,7 +652,7 @@ const Index = () => {
       </AnimatePresence>
 
       <AlertDialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
-        <AlertDialogContent className="max-w-sm w-[calc(100%-2rem)] rounded-xl">
+        <AlertDialogContent className="max-w-sm w-[calc(100%-2rem)] rounded-2xl border-white/20 bg-background/70 backdrop-blur-2xl backdrop-saturate-150">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Trash2 className="h-5 w-5 text-destructive" />
@@ -653,8 +661,8 @@ const Index = () => {
             <AlertDialogDescription>Semua data input untuk bill ini akan dihapus. Tindakan ini tidak bisa dibatalkan.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-lg">Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={resetData} className="rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogCancel className="glass-subtle rounded-xl">Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={resetData} className="rounded-xl bg-destructive/75 backdrop-blur-xl border border-white/25 text-destructive-foreground shadow-lg shadow-black/10 hover:bg-destructive/90">
               Hapus
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -709,12 +717,12 @@ function PersonItemCard({
   const itemTotal = person.items.reduce((sum, i) => sum + i.price, 0);
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div className="glass glass-sheen rounded-2xl overflow-hidden">
       {/* Collapsible Header */}
-      <button onClick={() => setCollapsed(!collapsed)} className="w-full flex items-center justify-between p-3 sm:p-4 text-left hover:bg-muted/30 transition-colors">
+      <button onClick={() => setCollapsed(!collapsed)} className="relative w-full flex items-center justify-between p-3 sm:p-4 text-left hover:bg-white/10 transition-colors">
         <div className="flex items-center gap-2">
           <h3 className="font-semibold text-foreground text-sm sm:text-base">{person.name}</h3>
-          {person.items.length > 0 && <span className="flex h-4 min-w-4 sm:h-5 sm:min-w-5 items-center justify-center rounded-full bg-primary/10 px-1.5 text-[10px] font-bold text-primary">{person.items.length}</span>}
+          {person.items.length > 0 && <span className="flex h-4 min-w-4 sm:h-5 sm:min-w-5 items-center justify-center rounded-full bg-primary/15 border border-white/20 px-1.5 text-[10px] font-bold text-primary">{person.items.length}</span>}
         </div>
         <div className="flex items-center gap-2">
           {person.items.length > 0 && <span className="text-[11px] sm:text-xs font-medium text-primary">{formatRupiah(itemTotal)}</span>}
@@ -727,38 +735,35 @@ function PersonItemCard({
       {/* Collapsible Body */}
       <AnimatePresence initial={false}>
         {!collapsed && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: "easeInOut" }} className="overflow-hidden">
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: "easeInOut" }} className="relative overflow-hidden">
             <div className="px-3 pt-1 pb-3 sm:px-4 sm:pb-4 space-y-2 sm:space-y-3">
               <div className="flex flex-wrap gap-2">
-                <input
-                  type="text"
-                  placeholder="Nama item..."
-                  value={itemName}
-                  onChange={(e) => setItemName(e.target.value)}
-                  className="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-ring focus:ring-2"
-                />
+                <input type="text" placeholder="Nama item..." value={itemName} onChange={(e) => setItemName(e.target.value)} className="glass-subtle min-w-0 flex-1 rounded-xl px-3 py-2 text-sm outline-none ring-ring focus:ring-2" />
                 <input
                   type="number"
                   placeholder="Harga"
                   value={itemPrice}
                   onChange={(e) => setItemPrice(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                  className="min-w-0 w-32 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-ring focus:ring-2"
+                  className="glass-subtle min-w-0 w-32 rounded-xl px-3 py-2 text-sm outline-none ring-ring focus:ring-2"
                 />
-                <button onClick={handleAdd} className="flex shrink-0 items-center justify-center rounded-lg bg-primary px-3 py-2 text-primary-foreground transition-colors hover:opacity-90">
+                <button
+                  onClick={handleAdd}
+                  className="flex shrink-0 items-center justify-center rounded-xl bg-primary/70 backdrop-blur-xl border border-white/30 px-3 py-2 text-primary-foreground shadow-lg shadow-black/10 transition-colors hover:bg-primary/85"
+                >
                   <Plus className="h-4 w-4" />
                 </button>
               </div>
               <AnimatePresence>
                 {person.items.map((item) => (
-                  <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
+                  <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="glass-subtle flex items-center justify-between rounded-xl px-3 py-2">
                     {editingId === item.id ? (
                       <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
                         <input
                           type="text"
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
-                          className="min-w-0 flex-1 basis-[60%] rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary"
+                          className="glass-subtle min-w-0 flex-1 basis-[60%] rounded-xl px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary"
                           autoFocus
                         />
                         <input
@@ -766,7 +771,7 @@ function PersonItemCard({
                           value={editPrice}
                           onChange={(e) => setEditPrice(e.target.value)}
                           onKeyDown={(e) => e.key === "Enter" && handleUpdate()}
-                          className="min-w-0 w-20 flex-shrink-0 rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary"
+                          className="glass-subtle min-w-0 w-20 flex-shrink-0 rounded-xl px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary"
                         />
                         <div className="flex gap-1">
                           <button onClick={handleUpdate} className="text-primary hover:text-primary/80 transition-colors">
@@ -784,10 +789,10 @@ function PersonItemCard({
                           <span className="ml-2 text-primary font-medium">{formatRupiah(item.price)}</span>
                         </div>
                         <div className="flex gap-1">
-                          <button onClick={() => startEditing(item)} className="rounded-lg p-1 text-muted-foreground hover:text-primary transition-colors">
+                          <button onClick={() => startEditing(item)} className="rounded-xl p-1 text-muted-foreground hover:text-primary transition-colors">
                             <Pencil className="h-3.5 w-3.5" />
                           </button>
-                          <button onClick={() => onRemoveItem(item.id)} className="rounded-lg p-1 text-muted-foreground hover:text-destructive transition-colors">
+                          <button onClick={() => onRemoveItem(item.id)} className="rounded-xl p-1 text-muted-foreground hover:text-destructive transition-colors">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>

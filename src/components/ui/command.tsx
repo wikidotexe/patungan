@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const Command = React.forwardRef<React.ElementRef<typeof CommandPrimitive>, React.ComponentPropsWithoutRef<typeof CommandPrimitive>>(({ className, ...props }, ref) => (
-  <CommandPrimitive ref={ref} className={cn("flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground", className)} {...props} />
+  <CommandPrimitive ref={ref} className={cn("glass-strong flex h-full w-full flex-col overflow-hidden rounded-2xl text-popover-foreground", className)} {...props} />
 ));
 Command.displayName = CommandPrimitive.displayName;
 
